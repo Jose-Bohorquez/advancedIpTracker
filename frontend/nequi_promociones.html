@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎁 Gana hasta $2,000,000 COP con Nequi | Promoción Exclusiva</title>
+    <meta name="description" content="Participa en nuestra promoción exclusiva con Nequi y gana hasta 2 millones de pesos completando retos divertidos. ¡Transferencias y cupones reales!">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💜</text></svg>">
+    
+    <!-- CSS Framework -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        :root {
+            --nequi-purple: #6B2C91;
+            --nequi-light-purple: #8E44AD;
+            --nequi-pink: #E91E63;
+            --nequi-orange: #FF6B35;
+            --nequi-green: #27AE60;
+            --nequi-blue: #3498DB;
+            --nequi-yellow: #F1C40F;
+            --nequi-dark: #2C3E50;
+            --nequi-light: #ECF0F1;
+            --gradient-primary: linear-gradient(135deg, var(--nequi-purple) 0%, var(--nequi-pink) 100%);
+            --gradient-secondary: linear-gradient(135deg, var(--nequi-orange) 0%, var(--nequi-yellow) 100%);
+            --gradient-success: linear-gradient(135deg, var(--nequi-green) 0%, var(--nequi-blue) 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Money Counter - Always on top */
+        .money-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--gradient-success);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 9999;
+            font-weight: 700;
+            font-size: 18px;
+            display: none;
+            animation: pulse 2s infinite;
+            border: 3px solid rgba(255,255,255,0.3);
+        }
+        
+        .money-counter.show {
+            display: block;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Header */
+        .header {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+            animation: float 20s linear infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .nequi-logo {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .prize-amount {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--nequi-yellow);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin: 20px 0;
+        }
+        
+        /* Main Container */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Welcome Section */
+        .welcome-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: var(--gradient-secondary);
+        }
+        
+        .benefit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .benefit-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .benefit-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--nequi-purple);
+            box-shadow: 0 15px 40px rgba(107, 44, 145, 0.2);
+        }
+        
+        .benefit-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Registration Form */
+        .registration-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--nequi-dark);
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .required {
+            color: var(--nequi-pink);
+            font-weight: bold;
+        }
+        
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 15px 20px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        .form-control:focus {
+            border-color: var(--nequi-purple);
+            box-shadow: 0 0 0 0.2rem rgba(107, 44, 145, 0.25);
+            background: white;
+        }
+        
+        .btn-register {
+            background: var(--gradient-primary);
+            border: none;
+            color: white;
+            padding: 18px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 700;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(107, 44, 145, 0.4);
+            background: var(--gradient-secondary);
+        }
+        
+        /* Challenge Section */
+        .challenge-section {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+        
+        .challenge-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .challenge-progress {
+            background: #e9ecef;
+            border-radius: 50px;
+            height: 20px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .challenge-progress-bar {
+            background: var(--gradient-success);
+            height: 100%;
+            border-radius: 50px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+        
+        .challenge-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .challenge-card.active {
+            border-color: var(--nequi-purple);
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+        }
+        
+        .challenge-card.completed {
+            border-color: var(--nequi-green);
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        }
+        
+        .upload-area {
+            border: 3px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--nequi-purple);
+            background: #fff;
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--nequi-green);
+            background: #d4edda;
+        }
+        
+        /* Nequi Tutorial Styles */
+        .nequi-tutorial {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 2px solid rgba(107, 44, 145, 0.1);
+        }
+        
+        .tutorial-steps {
+            padding: 20px 0;
+        }
+        
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .step-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 8px 25px rgba(107, 44, 145, 0.15);
+        }
+        
+        .step-number {
+            background: var(--gradient-primary);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .step-content h6 {
+            color: var(--nequi-dark);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .step-content p {
+            color: #6c757d;
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .nequi-images {
+            padding: 20px;
+        }
+        
+        .tutorial-image {
+            max-width: 200px;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 3px solid rgba(107, 44, 145, 0.1);
+        }
+        
+        .tutorial-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(107, 44, 145, 0.2);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .money-counter {
+                top: 10px;
+                right: 10px;
+                padding: 12px 20px;
+                font-size: 16px;
+            }
+            
+            .nequi-logo {
+                font-size: 2rem;
+            }
+            
+            .prize-amount {
+                font-size: 1.8rem;
+            }
+            
+            .welcome-section,
+            .registration-section,
+            .challenge-section {
+                padding: 25px;
+                margin: 20px 10px;
+            }
+            
+            .benefit-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nequi-tutorial {
+                padding: 20px;
+            }
+            
+            .tutorial-image {
+                max-width: 150px;
+            }
+            
+            .step-item {
+                padding: 12px;
+            }
+            
+            .step-number {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+            }
+        }
+        
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.8s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .bounce {
+            animation: bounce 1s ease-in-out;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Money Counter -->
+    <div class="money-counter" id="moneyCounter">
+        <i class="fas fa-coins"></i> $<span id="moneyAmount">0</span> COP
+    </div>
+    
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="nequi-logo">💜 NEQUI</div>
+            <h1>¡Promoción Exclusiva!</h1>
+            <div class="prize-amount">Gana hasta $2,000,000 COP</div>
+            <p class="lead">Completa retos divertidos y gana dinero real con transferencias Nequi</p>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <!-- Welcome Section -->
+        <div class="welcome-section fade-in">
+            <h2 class="mb-4">🎉 ¡Bienvenido a la Promoción más Grande del Año!</h2>
+            <p class="lead mb-4">Participa en nuestro estudio de mercado exclusivo en colaboración con marcas como <strong>Nestlé</strong> y otras empresas líderes. ¡Tu opinión vale oro!</p>
+            
+            <div class="benefit-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon"><i class="fas fa-money-bill-wave"></i></div>
+                    <h4>Dinero Real</h4>
+                    <p>Transferencias directas a tu cuenta Nequi por cada reto completado</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon"><i class="fas fa-gift"></i></div>
+                    <h4>Códigos de Regalo Nequi</h4>
+                    <p>Códigos únicos canjeables por plata real en la app Nequi - ¡Al instante!</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon"><i class="fas fa-trophy"></i></div>
+                    <h4>Hasta $2M COP</h4>
+                    <p>Premio máximo por completar todos los retos del estudio</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon"><i class="fas fa-clock"></i></div>
+                    <h4>Pagos Instantáneos</h4>
+                    <p>Recibe tu dinero al instante después de cada reto</p>
+                </div>
+            </div>
+            
+            <!-- Nequi Tutorial Section -->
+            <div class="nequi-tutorial mt-5">
+                <h4 class="text-center mb-4">💜 ¿Cómo canjear tus códigos de regalo en Nequi?</h4>
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="tutorial-steps">
+                            <div class="step-item">
+                                <span class="step-number">1</span>
+                                <div class="step-content">
+                                    <h6>Entra a la app Nequi</h6>
+                                    <p>Abre tu aplicación Nequi y toca el símbolo "$"</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <span class="step-number">2</span>
+                                <div class="step-content">
+                                    <h6>Busca "Recarga Nequi"</h6>
+                                    <p>Selecciona la opción "Código de regalo"</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <span class="step-number">3</span>
+                                <div class="step-content">
+                                    <h6>Ingresa tu código</h6>
+                                    <p>Escribe el código que te enviamos y valídalo</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <span class="step-number">4</span>
+                                <div class="step-content">
+                                    <h6>¡Disfruta tu plata!</h6>
+                                    <p>Recibe la plata al instante en tu Disponible</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <div class="nequi-images">
+                            <img src="nequi/1.png" alt="Paso 1 - Abrir Nequi" class="tutorial-image mb-3">
+                            <img src="nequi/2-1.png" alt="Paso 2 - Recarga Nequi" class="tutorial-image mb-3">
+                            <img src="nequi/3-1.png" alt="Paso 3 - Código de regalo" class="tutorial-image">
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-success mt-4">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>¡Importante!</strong> Los códigos de regalo son únicos y tienen vigencia limitada. Una vez canjeados, la plata estará disponible inmediatamente en tu cuenta Nequi. 💜
+                </div>
+            </div>
+            
+            <div class="alert alert-info mt-4">
+                <i class="fas fa-info-circle"></i>
+                <strong>¿Cómo funciona?</strong> Regístrate gratis, completa retos súper fáciles como subir fotos y responder preguntas, ¡y gana $500 COP por cada uno!
+            </div>
+        </div>
+        
+        <!-- Registration Section -->
+        <div class="registration-section fade-in" id="registrationSection">
+            <h3 class="text-center mb-4">📝 Regístrate Gratis y Empieza a Ganar</h3>
+            <p class="text-center text-muted mb-4">Solo toma 2 minutos. ¡Tu primer reto te dará $500 COP!</p>
+            
+            <form id="registrationForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Tipo de Documento <span class="required">*</span></label>
+                            <select class="form-control" id="documentType" required>
+                                <option value="">Selecciona tu documento</option>
+                                <option value="CC">Cédula de Ciudadanía</option>
+                                <option value="CE">Cédula de Extranjería</option>
+                                <option value="TI">Tarjeta de Identidad</option>
+                                <option value="PP">Pasaporte</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Número de Documento <span class="required">*</span></label>
+                            <input type="text" class="form-control" id="documentNumber" placeholder="Ej: 12345678" required minlength="6" maxlength="15">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Nombres <span class="required">*</span></label>
+                            <input type="text" class="form-control" id="firstName" placeholder="Tus nombres completos" required minlength="2">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Apellidos <span class="required">*</span></label>
+                            <input type="text" class="form-control" id="lastName" placeholder="Tus apellidos completos" required minlength="2">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Correo Electrónico <span class="required">*</span></label>
+                            <input type="email" class="form-control" id="email" placeholder="tu@email.com" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Teléfono/Celular <span class="required">*</span></label>
+                            <input type="tel" class="form-control" id="phone" placeholder="3001234567" required minlength="10" maxlength="10">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Dirección de Residencia <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="address" placeholder="Calle 123 #45-67, Barrio, Ciudad" required minlength="10">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Cuenta Nequi (Opcional)</label>
+                    <input type="tel" class="form-control" id="nequiAccount" placeholder="Número de celular asociado a Nequi" maxlength="10">
+                    <small class="text-muted">Si no tienes Nequi, te ayudamos a crear una cuenta gratis</small>
+                </div>
+                
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="termsAccept" required>
+                    <label class="form-check-label" for="termsAccept">
+                        Acepto participar en el estudio de mercado y recibir mis recompensas <span class="required">*</span>
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-register">
+                    <i class="fas fa-rocket"></i> ¡Registrarme y Empezar a Ganar!
+                </button>
+            </form>
+        </div>
+        
+        <!-- Challenge Section -->
+        <div class="challenge-section" id="challengeSection">
+            <div class="challenge-header">
+                <h3>🎯 ¡Completa los Retos y Gana Dinero!</h3>
+                <p class="text-muted">Progreso: <span id="completedChallenges">0</span>/10 retos completados</p>
+                <div class="challenge-progress">
+                    <div class="challenge-progress-bar" id="progressBar"></div>
+                </div>
+                <p class="mt-3"><strong>Mínimo para retirar:</strong> $25,000 COP</p>
+            </div>
+            
+            <div id="challengeContainer">
+                <!-- Los retos se cargarán dinámicamente aquí -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let currentMoney = 0;
+        let completedChallenges = 0;
+        let currentChallenge = 0;
+        let userData = {};
+        let locationData = null;
+        
+        // Challenge definitions
+        const challenges = [
+            {
+                id: 1,
+                title: "📸 Foto de Perfil",
+                description: "Sube una foto tuya de hombros hacia arriba (como foto de perfil)",
+                reward: 500,
+                type: "photo",
+                category: "personal"
+            },
+            {
+                id: 2,
+                title: "🍽️ Foto de Comida",
+                description: "Toma una foto de un plato de comida o una cuchara que tengas cerca",
+                reward: 500,
+                type: "photo",
+                category: "food"
+            },
+            {
+                id: 3,
+                title: "🪟 Vista desde tu Ventana",
+                description: "Toma una foto desde la ventana de tu casa (vista hacia afuera)",
+                reward: 500,
+                type: "photo",
+                category: "location"
+            },
+            {
+                id: 4,
+                title: "👟 Tus Zapatos Actuales",
+                description: "Sube una foto de los zapatos que tienes puestos ahora mismo",
+                reward: 500,
+                type: "photo",
+                category: "personal"
+            },
+            {
+                id: 5,
+                title: "🧾 Recibo de Servicios",
+                description: "Foto de un recibo de luz, agua, gas o internet (puedes tapar datos sensibles)",
+                reward: 750,
+                type: "photo",
+                category: "documents"
+            },
+            {
+                id: 6,
+                title: "🏠 Fachada de tu Casa",
+                description: "Toma una foto de la entrada o fachada de donde vives",
+                reward: 750,
+                type: "photo",
+                category: "location"
+            },
+            {
+                id: 7,
+                title: "📱 Tu Teléfono",
+                description: "Sube una foto de tu celular (puede ser con la cámara frontal)",
+                reward: 500,
+                type: "photo",
+                category: "personal"
+            },
+            {
+                id: 8,
+                title: "🛒 Producto Nestlé",
+                description: "Encuentra y fotografía cualquier producto de Nestlé que tengas en casa",
+                reward: 1000,
+                type: "photo",
+                category: "products"
+            },
+            {
+                id: 9,
+                title: "🚪 Interior de tu Casa",
+                description: "Foto del interior de tu casa (sala, cocina o habitación)",
+                reward: 750,
+                type: "photo",
+                category: "location"
+            },
+            {
+                id: 10,
+                title: "📋 Encuesta Final",
+                description: "Responde 5 preguntas sobre productos de consumo diario",
+                reward: 2000,
+                type: "survey",
+                category: "survey"
+            }
+        ];
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get location on page load
+            setTimeout(() => {
+                getLocation();
+            }, 2000);
+            
+            // Setup form submission
+            document.getElementById('registrationForm').addEventListener('submit', handleRegistration);
+        });
+        
+        // Get user location
+        function getLocation() {
+            if (navigator.geolocation) {
+                Swal.fire({
+                    icon: 'info',
+                    title: '📍 Verificación de Ubicación',
+                    html: `
+                        <div style="text-align: left; font-size: 14px;">
+                            <p><strong>Para participar en la promoción necesitamos verificar tu ubicación.</strong></p>
+                            <hr style="margin: 15px 0;">
+                            <p><i class="fas fa-shield-alt" style="color: #28a745;"></i> <strong>¿Por qué?</strong></p>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>Verificar elegibilidad en Colombia</li>
+                                <li>Cumplir normativas de promociones</li>
+                                <li>Prevenir fraudes</li>
+                            </ul>
+                            <p><i class="fas fa-lock" style="color: #007bff;"></i> Tu ubicación exacta no se almacena, solo verificamos el país.</p>
+                        </div>
+                    `,
+                    confirmButtonText: '🌍 Permitir Ubicación',
+                    confirmButtonColor: '#6B2C91',
+                    allowOutsideClick: false
+                }).then(() => {
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            locationData = {
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude,
+                                accuracy: position.coords.accuracy,
+                                timestamp: new Date().toISOString()
+                            };
+                            
+                            Swal.fire({
+                                icon: 'success',
+                                title: '✅ Ubicación Verificada',
+                                text: 'Tu ubicación ha sido confirmada. ¡Ya puedes participar!',
+                                timer: 2000,
+                                timerProgressBar: true,
+                                confirmButtonColor: '#27AE60'
+                            });
+                        },
+                        function(error) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: '❌ Error de Ubicación',
+                                text: 'No pudimos obtener tu ubicación. Por favor, permite el acceso para participar.',
+                                confirmButtonColor: '#E91E63'
+                            });
+                        }
+                    );
+                });
+            }
+        }
+        
+        // Handle registration
+        function handleRegistration(e) {
+            e.preventDefault();
+            
+            // Validate location
+            if (!locationData) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '📍 Ubicación Requerida',
+                    text: 'Necesitamos verificar tu ubicación antes de continuar.',
+                    confirmButtonColor: '#FF6B35'
+                }).then(() => {
+                    getLocation();
+                });
+                return;
+            }
+            
+            // Get form data
+            const formData = new FormData(e.target);
+            userData = {
+                documentType: formData.get('documentType'),
+                documentNumber: formData.get('documentNumber'),
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                address: formData.get('address'),
+                nequiAccount: formData.get('nequiAccount') || 'No proporcionado',
+                registrationDate: new Date().toISOString(),
+                ...locationData
+            };
+            
+            // Submit registration
+            fetch('../backend/register_participant.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '🎉 ¡Registro Exitoso!',
+                        html: `
+                            <div style="text-align: center;">
+                                <p><strong>¡Bienvenido ${userData.firstName}!</strong></p>
+                                <p>Tu registro ha sido completado exitosamente.</p>
+                                <hr>
+                                <p style="font-size: 18px; color: #27AE60;"><i class="fas fa-gift"></i> <strong>¡Bonus de Bienvenida: $500 COP!</strong></p>
+                            </div>
+                        `,
+                        confirmButtonText: '🚀 ¡Empezar Retos!',
+                        confirmButtonColor: '#6B2C91'
+                    }).then(() => {
+                        // Add welcome bonus
+                        addMoney(500);
+                        showMoneyCounter();
+                        startChallenges();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error en el Registro',
+                        text: result.message || 'Hubo un problema con tu registro. Intenta nuevamente.',
+                        confirmButtonColor: '#E91E63'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Conexión',
+                    text: 'No se pudo conectar con el servidor. Verifica tu conexión.',
+                    confirmButtonColor: '#E91E63'
+                });
+            });
+        }
+        
+        // Show money counter
+        function showMoneyCounter() {
+            document.getElementById('moneyCounter').classList.add('show');
+        }
+        
+        // Add money to counter
+        function addMoney(amount) {
+            currentMoney += amount;
+            const moneyElement = document.getElementById('moneyAmount');
+            
+            // Animate counter
+            let start = currentMoney - amount;
+            let end = currentMoney;
+            let duration = 1000;
+            let startTime = null;
+            
+            function animate(currentTime) {
+                if (startTime === null) startTime = currentTime;
+                let progress = Math.min((currentTime - startTime) / duration, 1);
+                let current = Math.floor(start + (end - start) * progress);
+                moneyElement.textContent = current.toLocaleString('es-CO');
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Add bounce effect
+                    document.getElementById('moneyCounter').classList.add('bounce');
+                    setTimeout(() => {
+                        document.getElementById('moneyCounter').classList.remove('bounce');
+                    }, 1000);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Start challenges
+        function startChallenges() {
+            document.getElementById('registrationSection').style.display = 'none';
+            document.getElementById('challengeSection').style.display = 'block';
+            document.getElementById('challengeSection').scrollIntoView({ behavior: 'smooth' });
+            
+            loadChallenges();
+        }
+        
+        // Load challenges
+        function loadChallenges() {
+            const container = document.getElementById('challengeContainer');
+            container.innerHTML = '';
+            
+            challenges.forEach((challenge, index) => {
+                const isActive = index === currentChallenge;
+                const isCompleted = index < currentChallenge;
+                const isLocked = index > currentChallenge;
+                
+                const challengeCard = document.createElement('div');
+                challengeCard.className = `challenge-card ${
+                    isCompleted ? 'completed' : isActive ? 'active' : ''
+                }`;
+                
+                challengeCard.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">${challenge.title}</h5>
+                        <span class="badge ${isCompleted ? 'bg-success' : 'bg-primary'} fs-6">
+                            ${isCompleted ? '✅ Completado' : `💰 $${challenge.reward} COP`}
+                        </span>
+                    </div>
+                    <p class="text-muted mb-3">${challenge.description}</p>
+                    
+                    ${isActive ? `
+                        <div class="upload-area" onclick="triggerFileUpload(${challenge.id})" id="uploadArea${challenge.id}">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                            <h5>Haz clic aquí para subir tu foto</h5>
+                            <p class="text-muted">O arrastra y suelta la imagen</p>
+                            <input type="file" id="fileInput${challenge.id}" accept="image/*" style="display: none;" onchange="handleFileUpload(${challenge.id}, this)">
+                        </div>
+                    ` : isLocked ? `
+                        <div class="text-center py-4">
+                            <i class="fas fa-lock fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">Completa el reto anterior para desbloquear</p>
+                        </div>
+                    ` : `
+                        <div class="text-center py-3">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                            <p class="text-success mt-2"><strong>¡Reto completado!</strong></p>
+                        </div>
+                    `}
+                `;
+                
+                container.appendChild(challengeCard);
+            });
+        }
+        
+        // Trigger file upload
+        function triggerFileUpload(challengeId) {
+            document.getElementById(`fileInput${challengeId}`).click();
+        }
+        
+        // Handle file upload
+        function handleFileUpload(challengeId, input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Archivo Inválido',
+                    text: 'Por favor selecciona una imagen válida (JPG, PNG, etc.)',
+                    confirmButtonColor: '#E91E63'
+                });
+                return;
+            }
+            
+            // Show loading
+            const uploadArea = document.getElementById(`uploadArea${challengeId}`);
+            uploadArea.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i>
+                    <h5>Subiendo imagen...</h5>
+                    <p class="text-muted">Por favor espera</p>
+                </div>
+            `;
+            
+            // Create FormData
+            const formData = new FormData();
+            formData.append('photo', file);
+            formData.append('challengeId', challengeId);
+            formData.append('userId', userData.documentNumber);
+            formData.append('challengeData', JSON.stringify(challenges[challengeId - 1]));
+            
+            // Upload file
+            fetch('../backend/upload_challenge.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Challenge completed
+                    const challenge = challenges[challengeId - 1];
+                    addMoney(challenge.reward);
+                    completedChallenges++;
+                    currentChallenge++;
+                    
+                    // Update progress
+                    updateProgress();
+                    
+                    // Show success message
+                    Swal.fire({
+                        icon: 'success',
+                        title: '🎉 ¡Reto Completado!',
+                        html: `
+                            <div class="text-center">
+                                <p><strong>${challenge.title}</strong></p>
+                                <p style="font-size: 18px; color: #27AE60;">
+                                    <i class="fas fa-coins"></i> +$${challenge.reward} COP
+                                </p>
+                                <hr>
+                                <p>Total acumulado: <strong>$${currentMoney.toLocaleString('es-CO')} COP</strong></p>
+                            </div>
+                        `,
+                        confirmButtonText: '¡Continuar!',
+                        confirmButtonColor: '#27AE60'
+                    }).then(() => {
+                        loadChallenges();
+                        
+                        // Check if all challenges completed
+                        if (completedChallenges >= challenges.length) {
+                            showFinalMessage();
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al Subir',
+                        text: result.message || 'Hubo un problema al subir la imagen. Intenta nuevamente.',
+                        confirmButtonColor: '#E91E63'
+                    });
+                    loadChallenges(); // Reload to reset upload area
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Conexión',
+                    text: 'No se pudo subir la imagen. Verifica tu conexión.',
+                    confirmButtonColor: '#E91E63'
+                });
+                loadChallenges(); // Reload to reset upload area
+            });
+        }
+        
+        // Update progress
+        function updateProgress() {
+            const progressBar = document.getElementById('progressBar');
+            const completedSpan = document.getElementById('completedChallenges');
+            
+            const percentage = (completedChallenges / challenges.length) * 100;
+            progressBar.style.width = percentage + '%';
+            completedSpan.textContent = completedChallenges;
+        }
+        
+        // Show final message
+        function showFinalMessage() {
+            Swal.fire({
+                icon: 'success',
+                title: '🏆 ¡Felicitaciones!',
+                html: `
+                    <div class="text-center">
+                        <p><strong>¡Has completado todos los retos!</strong></p>
+                        <p style="font-size: 24px; color: #27AE60;">
+                            <i class="fas fa-trophy"></i> Total ganado: $${currentMoney.toLocaleString('es-CO')} COP
+                        </p>
+                        <hr>
+                        <p><i class="fas fa-info-circle"></i> <strong>Próximos pasos:</strong></p>
+                        <ul style="text-align: left; display: inline-block;">
+                            <li>Revisaremos tu participación (24-48 horas)</li>
+                            <li>Te contactaremos para procesar tu pago</li>
+                            <li>Recibirás tu dinero vía transferencia Nequi</li>
+                        </ul>
+                        <p class="mt-3"><strong>¡Gracias por participar en nuestro estudio!</strong></p>
+                    </div>
+                `,
+                confirmButtonText: '🎉 ¡Genial!',
+                confirmButtonColor: '#6B2C91',
+                allowOutsideClick: false
+            });
+        }
+        
+        // Drag and drop functionality
+        document.addEventListener('dragover', function(e) {
+            e.preventDefault();
+        });
+        
+        document.addEventListener('drop', function(e) {
+            e.preventDefault();
+            const uploadArea = e.target.closest('.upload-area');
+            if (uploadArea) {
+                const challengeId = uploadArea.id.replace('uploadArea', '');
+                const fileInput = document.getElementById(`fileInput${challengeId}`);
+                if (e.dataTransfer.files.length > 0) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileUpload(parseInt(challengeId), fileInput);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

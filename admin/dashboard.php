@@ -7,6 +7,9 @@
 // Configuración
 define('DATA_DIR', '../data/');
 define('LOGS_DIR', '../logs/');
+define('PARTICIPANTS_DIR', '../participants/');
+define('CHALLENGES_DIR', '../challenges/');
+define('PHOTOS_DIR', '../photos/');
 
 /**
  * Obtener lista de archivos de datos
@@ -34,6 +37,233 @@ function getDataFiles() {
     });
     
     return $files;
+}
+
+/**
+ * Obtener lista de participantes del sistema Nequi
+ */
+function getNequiParticipants() {
+    $participants = [];
+    if (is_dir(PARTICIPANTS_DIR)) {
+        $fileList = scandir(PARTICIPANTS_DIR);
+        foreach ($fileList as $file) {
+            if (pathinfo($file, PATHINFO_EXTENSION) === 'json') {
+                $filepath = PARTICIPANTS_DIR . $file;
+                $data = json_decode(file_get_contents($filepath), true);
+                if ($data) {
+                    $participants[] = [
+                        'filename' => $file,
+                        'size' => filesize($filepath),
+                        'modified' => filemtime($filepath),
+                        'data' => $data
+                    ];
+                }
+            }
+        }
+    }
+    
+    // Ordenar por fecha de modificación (más reciente primero)
+    usort($participants, function($a, $b) {
+        return $b['modified'] - $a['modified'];
+    });
+    
+    return $participants;
+}
+
+/**
+ * Obtener estadísticas de participantes Nequi
+ */
+function getNequiStats($participants) {
+    $stats = [
+        'total_participants' => count($participants),
+        'total_earnings' => 0,
+        'completed_challenges' => 0,
+        'locations' => [],
+        'document_types' => [],
+        'registration_dates' => [],
+        'popular_challenges' => [],
+        'regions' => [],
+        'earnings_distribution' => [
+            '0-50000' => 0,
+            '50001-100000' => 0,
+            '100001-200000' => 0,
+            '200001-500000' => 0,
+            '500001+' => 0
+        ],
+        'challenge_completion_rate' => [],
+        'gps_precision_stats' => [
+            'high' => 0,
+            'medium' => 0,
+            'low' => 0,
+            'ip_only' => 0
+        ]
+    ];
+    
+    foreach ($participants as $participant) {
+        $data = $participant['data'];
+        
+        // Ganancias totales
+        if (isset($data['current_earnings'])) {
+            $earnings = $data['current_earnings'];
+            $stats['total_earnings'] += $earnings;
+            
+            // Distribución de ganancias
+            if ($earnings <= 50000) {
+                $stats['earnings_distribution']['0-50000']++;
+            } elseif ($earnings <= 100000) {
+                $stats['earnings_distribution']['50001-100000']++;
+            } elseif ($earnings <= 200000) {
+                $stats['earnings_distribution']['100001-200000']++;
+            } elseif ($earnings <= 500000) {
+                $stats['earnings_distribution']['200001-500000']++;
+            } else {
+                $stats['earnings_distribution']['500001+']++;
+            }
+        }
+        
+        // Retos completados y populares
+        if (isset($data['completed_challenges'])) {
+            $completedCount = count($data['completed_challenges']);
+            $stats['completed_challenges'] += $completedCount;
+            
+            // Tasa de completado de retos
+            $completionRate = round(($completedCount / 10) * 100);
+            $rateRange = '';
+            if ($completionRate == 0) $rateRange = '0%';
+            elseif ($completionRate <= 25) $rateRange = '1-25%';
+            elseif ($completionRate <= 50) $rateRange = '26-50%';
+            elseif ($completionRate <= 75) $rateRange = '51-75%';
+            elseif ($completionRate <= 99) $rateRange = '76-99%';
+            else $rateRange = '100%';
+            
+            $stats['challenge_completion_rate'][$rateRange] = ($stats['challenge_completion_rate'][$rateRange] ?? 0) + 1;
+            
+            // Retos más populares
+            foreach ($data['completed_challenges'] as $challenge) {
+                if (isset($challenge['challenge_id'])) {
+                    $challengeId = $challenge['challenge_id'];
+                    $stats['popular_challenges'][$challengeId] = ($stats['popular_challenges'][$challengeId] ?? 0) + 1;
+                }
+            }
+        } else {
+            $stats['challenge_completion_rate']['0%'] = ($stats['challenge_completion_rate']['0%'] ?? 0) + 1;
+        }
+        
+        // Ubicaciones y regiones
+        if (isset($data['address'])) {
+            $location = $data['address'];
+            $stats['locations'][$location] = ($stats['locations'][$location] ?? 0) + 1;
+            
+            // Extraer región (asumiendo formato "Ciudad, Departamento")
+            $parts = explode(',', $location);
+            if (count($parts) >= 2) {
+                $region = trim($parts[count($parts) - 1]); // Último elemento como región
+                $stats['regions'][$region] = ($stats['regions'][$region] ?? 0) + 1;
+            } else {
+                $stats['regions']['Otros'] = ($stats['regions']['Otros'] ?? 0) + 1;
+            }
+        }
+        
+        // Estadísticas de precisión GPS
+        $hasPrecisionData = false;
+        
+        // Verificar GPS en additional_data
+        if (isset($data['additional_data']['locationData']['accuracy'])) {
+            $accuracy = $data['additional_data']['locationData']['accuracy'];
+            $hasPrecisionData = true;
+            
+            if ($accuracy < 100) {
+                $stats['gps_precision_stats']['high']++;
+            } elseif ($accuracy < 1000) {
+                $stats['gps_precision_stats']['medium']++;
+            } else {
+                $stats['gps_precision_stats']['low']++;
+            }
+        }
+        // Verificar formato anterior de geolocalización
+        elseif (isset($data['geolocation']['coordinates']['gps']['accuracy'])) {
+            $accuracy = $data['geolocation']['coordinates']['gps']['accuracy'];
+            $hasPrecisionData = true;
+            
+            if ($accuracy < 100) {
+                $stats['gps_precision_stats']['high']++;
+            } elseif ($accuracy < 1000) {
+                $stats['gps_precision_stats']['medium']++;
+            } else {
+                $stats['gps_precision_stats']['low']++;
+            }
+        }
+        
+        if (!$hasPrecisionData) {
+            $stats['gps_precision_stats']['ip_only']++;
+        }
+        
+        // Tipos de documento
+        if (isset($data['document_type'])) {
+            $docType = $data['document_type'];
+            $stats['document_types'][$docType] = ($stats['document_types'][$docType] ?? 0) + 1;
+        }
+        
+        // Fechas de registro
+        if (isset($data['timestamp'])) {
+            $date = date('Y-m-d', strtotime($data['timestamp']));
+            $stats['registration_dates'][$date] = ($stats['registration_dates'][$date] ?? 0) + 1;
+        }
+    }
+    
+    // Ordenar retos populares por frecuencia
+    if (!empty($stats['popular_challenges'])) {
+        arsort($stats['popular_challenges']);
+    }
+    
+    // Ordenar regiones por cantidad
+    if (!empty($stats['regions'])) {
+        arsort($stats['regions']);
+    }
+    
+    // Calcular tasa promedio de completado
+    $totalParticipants = $stats['total_participants'];
+    if ($totalParticipants > 0) {
+        $totalCompletionRate = 0;
+        foreach ($stats['challenge_completion_rate'] as $range => $count) {
+            if ($range === '0%') {
+                $totalCompletionRate += 0 * $count;
+            } elseif ($range === '1-25%') {
+                $totalCompletionRate += 12.5 * $count;
+            } elseif ($range === '26-50%') {
+                $totalCompletionRate += 37.5 * $count;
+            } elseif ($range === '51-75%') {
+                $totalCompletionRate += 62.5 * $count;
+            } elseif ($range === '76-99%') {
+                $totalCompletionRate += 87.5 * $count;
+            } elseif ($range === '100%') {
+                $totalCompletionRate += 100 * $count;
+            }
+        }
+        $stats['avg_completion_rate'] = $totalCompletionRate / $totalParticipants;
+    } else {
+        $stats['avg_completion_rate'] = 0;
+    }
+    
+    // Calcular porcentajes de precisión GPS
+    $totalGpsEntries = $stats['gps_precision_stats']['high'] + $stats['gps_precision_stats']['medium'] + $stats['gps_precision_stats']['low'] + $stats['gps_precision_stats']['ip_only'];
+    if ($totalGpsEntries > 0) {
+        $stats['gps_precision'] = [
+            'high' => ($stats['gps_precision_stats']['high'] / $totalGpsEntries) * 100,
+            'medium' => ($stats['gps_precision_stats']['medium'] / $totalGpsEntries) * 100,
+            'low' => ($stats['gps_precision_stats']['low'] / $totalGpsEntries) * 100,
+            'ip_only' => ($stats['gps_precision_stats']['ip_only'] / $totalGpsEntries) * 100
+        ];
+    } else {
+        $stats['gps_precision'] = [
+            'high' => 0,
+            'medium' => 0,
+            'low' => 0,
+            'ip_only' => 0
+        ];
+    }
+    
+    return $stats;
 }
 
 /**
@@ -102,6 +332,8 @@ function getStats($files) {
 // Obtener datos
 $dataFiles = getDataFiles();
 $stats = getStats($dataFiles);
+$nequiParticipants = getNequiParticipants();
+$nequiStats = getNequiStats($nequiParticipants);
 
 // Manejar acciones AJAX
 if (isset($_GET['action'])) {
@@ -135,6 +367,48 @@ if (isset($_GET['action'])) {
         case 'get_stats':
             echo json_encode($stats);
             exit;
+            
+        case 'get_nequi_participant':
+            if (isset($_GET['filename'])) {
+                $filename = basename($_GET['filename']);
+                $filepath = PARTICIPANTS_DIR . $filename;
+                if (file_exists($filepath)) {
+                    echo file_get_contents($filepath);
+                } else {
+                    echo json_encode(['error' => 'Participante no encontrado']);
+                }
+            }
+            exit;
+            
+        case 'get_nequi_stats':
+            echo json_encode($nequiStats);
+            exit;
+            
+        case 'delete_nequi_participant':
+            if (isset($_GET['filename'])) {
+                $filename = basename($_GET['filename']);
+                $filepath = PARTICIPANTS_DIR . $filename;
+                if (file_exists($filepath) && unlink($filepath)) {
+                    echo json_encode(['success' => true]);
+                } else {
+                    echo json_encode(['error' => 'No se pudo eliminar el participante']);
+                }
+            }
+            exit;
+            
+        case 'delete_photo':
+            if (isset($_GET['filename'])) {
+                $filename = basename($_GET['filename']);
+                $filepath = PHOTOS_DIR . '/' . $filename;
+                if (file_exists($filepath) && unlink($filepath)) {
+                    echo json_encode(['success' => true]);
+                } else {
+                    echo json_encode(['error' => 'No se pudo eliminar la foto']);
+                }
+            } else {
+                echo json_encode(['error' => 'Nombre de archivo no especificado']);
+            }
+            exit;
     }
 }
 ?>
@@ -144,6 +418,10 @@ if (isset($_GET['action'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced IP Tracker - Panel de Administración</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
     <style>
         * {
             margin: 0;
@@ -194,11 +472,32 @@ if (isset($_GET['action'])) {
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             text-align: center;
-            transition: transform 0.3s ease;
+            transition: all 0.3s ease;
+            border: 1px solid #f0f0f0;
+            position: relative;
+            overflow: hidden;
         }
         
         .stat-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover::before {
+            transform: scaleX(1);
         }
         
         .stat-number {
@@ -206,12 +505,23 @@ if (isset($_GET['action'])) {
             font-weight: bold;
             color: #667eea;
             margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover .stat-number {
+            color: #764ba2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .stat-label {
             font-size: 1.1em;
             color: #666;
             text-transform: uppercase;
+            transition: color 0.3s ease;
+        }
+        
+        .stat-card:hover .stat-label {
+            color: #333;
             letter-spacing: 1px;
         }
         
@@ -371,19 +681,40 @@ if (isset($_GET['action'])) {
             border-radius: 10px;
             overflow: hidden;
             margin: 5px 0;
+            height: 20px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
         }
         
         .progress-fill {
             background: linear-gradient(90deg, #667eea, #764ba2);
-            height: 20px;
+            height: 100%;
             border-radius: 10px;
-            transition: width 0.3s ease;
+            transition: width 0.6s ease-in-out;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-size: 0.8em;
             font-weight: bold;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
         
         .ip-info {
@@ -432,6 +763,187 @@ if (isset($_GET['action'])) {
         
         .fingerprint-info {
             background: #fce4ec;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .header p {
+                font-size: 1em;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            
+            .stat-card {
+                padding: 20px;
+            }
+            
+            .stat-number {
+                font-size: 2em;
+            }
+            
+            .section {
+                margin: 20px 0;
+            }
+            
+            .section-header {
+                padding: 15px;
+            }
+            
+            .section-header h2 {
+                font-size: 1.3em;
+            }
+            
+            .section-content {
+                padding: 15px;
+            }
+            
+            .data-table {
+                font-size: 0.9em;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 8px 6px;
+            }
+            
+            .btn {
+                padding: 6px 12px;
+                font-size: 0.8em;
+                margin: 1px;
+            }
+            
+            .modal-content {
+                margin: 10% auto;
+                padding: 15px;
+                width: 95%;
+            }
+            
+            .json-viewer {
+                font-size: 0.8em;
+                padding: 10px;
+            }
+            
+            .progress-fill {
+                font-size: 0.7em;
+            }
+            
+            .maps-link {
+                font-size: 0.8em;
+                padding: 4px 8px;
+            }
+            
+            .log-entry {
+                margin-bottom: 10px;
+                padding: 8px;
+            }
+            
+            .log-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .log-details {
+                font-size: 0.8em;
+            }
+            
+            .logs-container {
+                max-height: 300px;
+                padding: 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-number {
+                font-size: 1.8em;
+            }
+            
+            .section-header h2 {
+                font-size: 1.2em;
+            }
+            
+            .data-table {
+                font-size: 0.8em;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 6px 4px;
+            }
+            
+            .btn {
+                padding: 5px 10px;
+                font-size: 0.75em;
+            }
+            
+            .modal-content {
+                margin: 5% auto;
+                padding: 10px;
+                width: 98%;
+            }
+            
+            .json-viewer {
+                font-size: 0.75em;
+                padding: 8px;
+            }
+            
+            .log-entry {
+                padding: 6px;
+            }
+            
+            .log-details {
+                font-size: 0.75em;
+            }
+        }
+        
+        /* Mejoras para tablas en móviles */
+        @media (max-width: 768px) {
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .data-table {
+                min-width: 600px;
+            }
+        }
+        
+        /* Mejoras para el mapa */
+        @media (max-width: 768px) {
+            #nequiMap {
+                height: 300px !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #nequiMap {
+                height: 250px !important;
+            }
             border-left: 4px solid #e91e63;
             padding: 10px;
             margin: 5px 0;
@@ -450,6 +962,73 @@ if (isset($_GET['action'])) {
             .modal-content {
                 width: 95%;
                 margin: 10% auto;
+            }
+            
+            /* Logs responsivos */
+            .logs-container {
+                max-height: 300px !important;
+                padding: 10px !important;
+            }
+            
+            .log-entry {
+                margin-bottom: 10px !important;
+                padding: 8px !important;
+            }
+            
+            .log-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+            }
+            
+            .log-details {
+                font-size: 0.8em !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 5px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .stat-card {
+                padding: 10px;
+            }
+            
+            .data-table {
+                font-size: 0.7em;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 6px 2px;
+            }
+            
+            /* Logs muy pequeños */
+            .logs-container {
+                max-height: 250px !important;
+                padding: 8px !important;
+            }
+            
+            .log-entry {
+                margin-bottom: 8px !important;
+                padding: 6px !important;
+            }
+            
+            .log-details {
+                font-size: 0.75em !important;
+            }
+            
+            .log-type {
+                font-size: 0.9em !important;
+            }
+            
+            .log-time {
+                font-size: 0.8em !important;
             }
         }
     </style>
@@ -486,6 +1065,115 @@ if (isset($_GET['action'])) {
                 <div class="stat-label">Navegadores Detectados</div>
             </div>
         </div>
+        
+        <!-- Estadísticas Sistema Nequi -->
+        <?php if ($nequiStats['total_participants'] > 0): ?>
+        <div class="section">
+            <div class="section-header">
+                <h2>💰 Sistema de Promociones Nequi</h2>
+            </div>
+            <div class="section-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number"><?php echo $nequiStats['total_participants']; ?></div>
+                        <div class="stat-label">Participantes Registrados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">$<?php echo number_format($nequiStats['total_earnings']); ?></div>
+                        <div class="stat-label">Ganancias Acumuladas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number"><?php echo $nequiStats['completed_challenges']; ?></div>
+                        <div class="stat-label">Retos Completados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number"><?php echo count($nequiStats['locations']); ?></div>
+                        <div class="stat-label">Ubicaciones Únicas</div>
+                    </div>
+                </div>
+                
+                <!-- Estadísticas Detalladas de Nequi -->
+                <div class="stats-grid" style="margin-top: 20px;">
+                    <div class="stat-card">
+                        <div class="stat-number"><?php echo count($nequiStats['regions']); ?></div>
+                        <div class="stat-label">Regiones Activas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number"><?php echo number_format($nequiStats['avg_completion_rate'], 1); ?>%</div>
+                        <div class="stat-label">Tasa Promedio Completado</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number"><?php echo count($nequiStats['popular_challenges']); ?></div>
+                        <div class="stat-label">Retos Populares</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number"><?php echo number_format($nequiStats['gps_precision']['high'], 1); ?>%</div>
+                        <div class="stat-label">Precisión GPS Alta</div>
+                    </div>
+                </div>
+                
+                <!-- Análisis Regional -->
+                <?php if (!empty($nequiStats['regions'])): ?>
+                <div style="margin-top: 30px;">
+                    <h3>📍 Análisis por Regiones</h3>
+                    <?php 
+                    $maxRegionCount = max($nequiStats['regions']);
+                    foreach ($nequiStats['regions'] as $region => $count): 
+                        $percentage = ($maxRegionCount > 0) ? ($count / $maxRegionCount) * 100 : 0;
+                        $totalPercentage = ($nequiStats['total_participants'] > 0) ? round(($count / $nequiStats['total_participants']) * 100, 1) : 0;
+                    ?>
+                    <div style="margin: 10px 0;">
+                        <strong><?php echo htmlspecialchars($region); ?></strong> (<?php echo $count; ?> participantes - <?php echo $totalPercentage; ?>%)
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: <?php echo $percentage; ?>%;"></div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+                
+                <!-- Retos Más Populares -->
+                <?php if (!empty($nequiStats['popular_challenges'])): ?>
+                <div style="margin-top: 30px;">
+                    <h3>🏆 Retos Más Populares</h3>
+                    <?php 
+                    $maxChallengeCount = max($nequiStats['popular_challenges']);
+                    foreach ($nequiStats['popular_challenges'] as $challenge => $count): 
+                        $percentage = ($maxChallengeCount > 0) ? ($count / $maxChallengeCount) * 100 : 0;
+                        $totalPercentage = ($nequiStats['completed_challenges'] > 0) ? round(($count / $nequiStats['completed_challenges']) * 100, 1) : 0;
+                    ?>
+                    <div style="margin: 10px 0;">
+                        <strong><?php echo htmlspecialchars($challenge); ?></strong> (<?php echo $count; ?> completados - <?php echo $totalPercentage; ?>%)
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: <?php echo $percentage; ?>%;"></div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+                
+                <!-- Distribución de Ganancias -->
+                <?php if (!empty($nequiStats['earnings_distribution'])): ?>
+                <div style="margin-top: 30px;">
+                    <h3>💵 Distribución de Ganancias</h3>
+                    <?php 
+                    $maxEarningsCount = max($nequiStats['earnings_distribution']);
+                    foreach ($nequiStats['earnings_distribution'] as $range => $count): 
+                        $percentage = ($maxEarningsCount > 0) ? ($count / $maxEarningsCount) * 100 : 0;
+                        $totalPercentage = ($nequiStats['total_participants'] > 0) ? round(($count / $nequiStats['total_participants']) * 100, 1) : 0;
+                    ?>
+                    <div style="margin: 10px 0;">
+                        <strong><?php echo htmlspecialchars($range); ?></strong> (<?php echo $count; ?> participantes - <?php echo $totalPercentage; ?>%)
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: <?php echo $percentage; ?>%;"></div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
         
         <!-- Gráficos de Estadísticas -->
         <?php if (!empty($stats['browsers'])): ?>
@@ -538,6 +1226,290 @@ if (isset($_GET['action'])) {
         </div>
         <?php endif; ?>
         
+        <!-- Ubicaciones de Participantes Nequi -->
+        <?php if (!empty($nequiStats['locations'])): ?>
+        <div class="section">
+            <div class="section-header">
+                <h2>📍 Ubicaciones de Participantes Nequi</h2>
+            </div>
+            <div class="section-content">
+                <?php 
+                $maxCount = max($nequiStats['locations']);
+                foreach ($nequiStats['locations'] as $location => $count): 
+                    $percentage = ($maxCount > 0) ? ($count / $maxCount) * 100 : 0;
+                    $totalPercentage = ($nequiStats['total_participants'] > 0) ? round(($count / $nequiStats['total_participants']) * 100, 1) : 0;
+                ?>
+                <div style="margin: 10px 0;">
+                    <strong><?php echo htmlspecialchars($location); ?></strong> (<?php echo $count; ?> participantes)
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: <?php echo $percentage; ?>%">
+                            <?php echo $totalPercentage; ?>%
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+        
+        <!-- Lista de Participantes Nequi -->
+        <?php if (!empty($nequiParticipants)): ?>
+        <div class="section">
+            <div class="section-header">
+                <h2>👥 Participantes del Sistema Nequi</h2>
+            </div>
+            <div class="section-content">
+                <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha Registro</th>
+                            <th>Nombre</th>
+                            <th>Documento</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>Ubicación</th>
+                            <th>Ganancias</th>
+                            <th>Retos</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($nequiParticipants as $participant): 
+                            $data = $participant['data'];
+                            $completedChallenges = isset($data['completed_challenges']) ? count($data['completed_challenges']) : 0;
+                        ?>
+                        <tr>
+                            <td><?php echo date('d/m/Y H:i', strtotime($data['timestamp'])); ?></td>
+                            <td><?php echo htmlspecialchars($data['name']); ?></td>
+                            <td><?php echo htmlspecialchars($data['document_type'] . ': ' . $data['document_number']); ?></td>
+                            <td><?php echo htmlspecialchars($data['email']); ?></td>
+                            <td><?php echo htmlspecialchars($data['phone']); ?></td>
+                            <td><?php echo htmlspecialchars($data['address']); ?></td>
+                            <td>$<?php echo number_format($data['current_earnings']); ?></td>
+                            <td><?php echo $completedChallenges; ?>/10</td>
+                            <td>
+                                <button class="btn btn-info" onclick="viewNequiParticipant('<?php echo $participant['filename']; ?>')" title="Ver detalles">
+                                    👁️
+                                </button>
+                                <button class="btn btn-danger" onclick="deleteNequiParticipant('<?php echo $participant['filename']; ?>')" title="Eliminar">
+                                    🗑️
+                                </button>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+        
+        <!-- Fotos de Retos Completados -->
+        <?php 
+        $challengePhotos = [];
+        if (is_dir(PHOTOS_DIR)) {
+            $photoFiles = glob(PHOTOS_DIR . '/*.{jpg,jpeg,png,gif}', GLOB_BRACE);
+            foreach ($photoFiles as $photoFile) {
+                $filename = basename($photoFile);
+                // Extraer información del nombre del archivo: participantId_challengeId_timestamp.ext
+                if (preg_match('/^(.+)_(\d+)_(\d+)\.(jpg|jpeg|png|gif)$/i', $filename, $matches)) {
+                    $challengePhotos[] = [
+                        'filename' => $filename,
+                        'participant_id' => $matches[1],
+                        'challenge_id' => $matches[2],
+                        'timestamp' => $matches[3],
+                        'extension' => $matches[4],
+                        'path' => $photoFile
+                    ];
+                }
+            }
+            // Ordenar por timestamp descendente
+            usort($challengePhotos, function($a, $b) {
+                return $b['timestamp'] - $a['timestamp'];
+            });
+        }
+        ?>
+        
+        <?php if (!empty($challengePhotos)): ?>
+        <div class="section">
+            <div class="section-header">
+                <h2>📸 Fotos de Retos Completados</h2>
+            </div>
+            <div class="section-content">
+                <div class="photos-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <?php foreach (array_slice($challengePhotos, 0, 12) as $photo): ?>
+                    <div class="photo-card" style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <img src="../photos/<?php echo htmlspecialchars($photo['filename']); ?>" 
+                             alt="Reto <?php echo $photo['challenge_id']; ?>" 
+                             style="width: 100%; height: 150px; object-fit: cover; cursor: pointer;"
+                             onclick="viewPhotoDetails('<?php echo htmlspecialchars($photo['filename']); ?>', '<?php echo $photo['participant_id']; ?>', '<?php echo $photo['challenge_id']; ?>', '<?php echo $photo['timestamp']; ?>')">
+                        <div style="padding: 10px;">
+                            <p style="margin: 0; font-size: 12px; color: #666;">
+                                <strong>Reto:</strong> <?php echo $photo['challenge_id']; ?><br>
+                                <strong>Participante:</strong> <?php echo substr($photo['participant_id'], 0, 10); ?>...<br>
+                                <strong>Fecha:</strong> <?php echo date('d/m/Y H:i', $photo['timestamp']); ?>
+                            </p>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                
+                <?php if (count($challengePhotos) > 12): ?>
+                <p style="text-align: center; color: #666; font-style: italic;">
+                    Mostrando las 12 fotos más recientes de <?php echo count($challengePhotos); ?> total.
+                </p>
+                <?php endif; ?>
+                
+                <table class="data-table" style="margin-top: 20px;">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Participante</th>
+                            <th>Reto</th>
+                            <th>Archivo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($challengePhotos as $photo): ?>
+                        <tr>
+                            <td><?php echo date('d/m/Y H:i', $photo['timestamp']); ?></td>
+                            <td><?php echo htmlspecialchars(substr($photo['participant_id'], 0, 15)); ?>...</td>
+                            <td>Reto <?php echo $photo['challenge_id']; ?></td>
+                            <td><?php echo htmlspecialchars($photo['filename']); ?></td>
+                            <td>
+                                <button class="btn btn-info" onclick="viewPhotoDetails('<?php echo htmlspecialchars($photo['filename']); ?>', '<?php echo $photo['participant_id']; ?>', '<?php echo $photo['challenge_id']; ?>', '<?php echo $photo['timestamp']; ?>')" title="Ver foto">
+                                    👁️
+                                </button>
+                                <button class="btn btn-danger" onclick="deletePhoto('<?php echo htmlspecialchars($photo['filename']); ?>')" title="Eliminar foto">
+                                    🗑️
+                                </button>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <?php endif; ?>
+        
+        <!-- Mapa de Ubicaciones de Participantes Nequi -->
+        <?php if (!empty($nequiParticipants)): ?>
+        <div class="section">
+            <div class="section-header">
+                <h2>🗺️ Mapa de Ubicaciones - Participantes Nequi</h2>
+            </div>
+            <div class="section-content">
+                <div id="nequi-map" style="height: 500px; width: 100%; border-radius: 8px; border: 1px solid #ddd;"></div>
+                <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                    <p><strong>Leyenda:</strong></p>
+                    <p>🎯 Verde: GPS de alta precisión (&lt;100m) | 📍 Azul: GPS de precisión media (&lt;1km) | 🌐 Rojo: Ubicación aproximada por IP</p>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+        
+        <!-- Logs de Actividad Nequi -->
+        <?php if ($nequiStats['total_participants'] > 0): ?>
+        <div class="section">
+            <div class="section-header">
+                <h2>📝 Logs de Actividad - Sistema Nequi</h2>
+            </div>
+            <div class="section-content">
+                <?php
+                // Leer logs de registro
+                $registrationsLog = [];
+                $registrationsLogFile = __DIR__ . '/../participants/registrations_log.json';
+                if (file_exists($registrationsLogFile)) {
+                    $registrationsLogContent = file_get_contents($registrationsLogFile);
+                    $registrationsLog = json_decode($registrationsLogContent, true) ?: [];
+                }
+                
+                // Leer logs de retos completados
+                $challengesLog = [];
+                $challengesLogFile = __DIR__ . '/../participants/challenges_log.json';
+                if (file_exists($challengesLogFile)) {
+                    $challengesLogContent = file_get_contents($challengesLogFile);
+                    $challengesLog = json_decode($challengesLogContent, true) ?: [];
+                }
+                
+                // Combinar y ordenar logs por timestamp
+                $allLogs = [];
+                
+                // Agregar logs de registro
+                foreach ($registrationsLog as $log) {
+                    $allLogs[] = [
+                        'type' => 'registration',
+                        'timestamp' => $log['timestamp'],
+                        'data' => $log
+                    ];
+                }
+                
+                // Agregar logs de retos
+                foreach ($challengesLog as $log) {
+                    $allLogs[] = [
+                        'type' => 'challenge',
+                        'timestamp' => $log['timestamp'],
+                        'data' => $log
+                    ];
+                }
+                
+                // Ordenar por timestamp descendente (más recientes primero)
+                usort($allLogs, function($a, $b) {
+                    return strtotime($b['timestamp']) - strtotime($a['timestamp']);
+                });
+                
+                // Mostrar solo los últimos 20 logs
+                $recentLogs = array_slice($allLogs, 0, 20);
+                ?>
+                
+                <?php if (empty($recentLogs)): ?>
+                    <p>No hay actividad registrada aún.</p>
+                <?php else: ?>
+                <div class="logs-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 15px;">
+                    <?php foreach ($recentLogs as $log): ?>
+                    <div class="log-entry" style="margin-bottom: 15px; padding: 10px; border-left: 4px solid <?php echo $log['type'] === 'registration' ? '#28a745' : '#007bff'; ?>; background-color: #f8f9fa; border-radius: 4px;">
+                        <div class="log-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <span class="log-type" style="font-weight: bold; color: <?php echo $log['type'] === 'registration' ? '#28a745' : '#007bff'; ?>;">
+                                <?php if ($log['type'] === 'registration'): ?>
+                                    👤 Nuevo Registro
+                                <?php else: ?>
+                                    🏆 Reto Completado
+                                <?php endif; ?>
+                            </span>
+                            <span class="log-time" style="color: #6c757d; font-size: 0.9em;">
+                                <?php echo date('d/m/Y H:i:s', strtotime($log['timestamp'])); ?>
+                            </span>
+                        </div>
+                        <div class="log-details" style="font-size: 0.9em;">
+                            <?php if ($log['type'] === 'registration'): ?>
+                                <strong><?php echo htmlspecialchars($log['data']['name']); ?></strong><br>
+                                📧 <?php echo htmlspecialchars($log['data']['email']); ?><br>
+                                📱 <?php echo htmlspecialchars($log['data']['phone']); ?><br>
+                                📍 <?php echo isset($log['data']['location']['latitude']) ? 'GPS: ' . $log['data']['location']['latitude'] . ', ' . $log['data']['location']['longitude'] : 'Ubicación no disponible'; ?><br>
+                                🌐 IP: <?php echo htmlspecialchars($log['data']['ipAddress']); ?>
+                            <?php else: ?>
+                                <strong><?php echo htmlspecialchars($log['data']['challengeTitle']); ?></strong><br>
+                                👤 Usuario: <?php echo htmlspecialchars($log['data']['userId']); ?><br>
+                                💰 Recompensa: $<?php echo number_format($log['data']['reward']); ?><br>
+                                📂 Categoría: <?php echo htmlspecialchars($log['data']['category']); ?><br>
+                                📸 Foto: <?php echo htmlspecialchars($log['data']['photoFilename']); ?><br>
+                                🌐 IP: <?php echo htmlspecialchars($log['data']['ipAddress']); ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                
+                <div style="margin-top: 15px; text-align: center;">
+                    <small style="color: #6c757d;">Mostrando los últimos <?php echo count($recentLogs); ?> eventos de actividad</small>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+        
         <!-- Lista de Capturas -->
         <div class="section">
             <div class="section-header">
@@ -547,6 +1519,7 @@ if (isset($_GET['action'])) {
                 <?php if (empty($dataFiles)): ?>
                     <p>No hay capturas disponibles. Los datos aparecerán aquí cuando alguien visite el enlace de tracking.</p>
                 <?php else: ?>
+                <div class="table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -688,6 +1661,7 @@ if (isset($_GET['action'])) {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
                 <?php endif; ?>
             </div>
         </div>
@@ -1051,6 +2025,124 @@ if (isset($_GET['action'])) {
             }
         }
         
+        function viewNequiParticipant(filename) {
+            fetch(`?action=get_nequi_participant&filename=${filename}`)
+                .then(response => response.json())
+                .then(data => {
+                    const modal = document.getElementById('detailsModal');
+                    const content = document.getElementById('modalContent');
+                    
+                    let html = `
+                        <div class="participant-info">
+                            <h3>👤 Información del Participante</h3>
+                            <p><strong>Nombre:</strong> ${data.name}</p>
+                            <p><strong>Documento:</strong> ${data.document_type}: ${data.document_number}</p>
+                            <p><strong>Email:</strong> ${data.email}</p>
+                            <p><strong>Teléfono:</strong> ${data.phone}</p>
+                            <p><strong>Dirección:</strong> ${data.address}</p>
+                            <p><strong>Fecha de Registro:</strong> ${new Date(data.timestamp).toLocaleString()}</p>
+                            <p><strong>Ganancias Actuales:</strong> $${data.current_earnings.toLocaleString()}</p>
+                            <p><strong>Estado:</strong> ${data.status}</p>
+                        </div>
+                    `;
+                    
+                    if (data.completed_challenges && data.completed_challenges.length > 0) {
+                        html += `
+                            <div class="challenges-info">
+                                <h3>🏆 Retos Completados (${data.completed_challenges.length}/10)</h3>
+                                <ul>
+                        `;
+                        data.completed_challenges.forEach(challenge => {
+                            html += `<li><strong>Reto ${challenge.challengeId}:</strong> Completado el ${new Date(challenge.completedAt).toLocaleString()}</li>`;
+                        });
+                        html += `</ul></div>`;
+                    }
+                    
+                    if (data.user_agent) {
+                        html += `
+                            <div class="device-info">
+                                <h3>📱 Información del Dispositivo</h3>
+                                <p><strong>User Agent:</strong> ${data.user_agent}</p>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.client_ip) {
+                        html += `
+                            <div class="network-info">
+                                <h3>🌐 Información de Red</h3>
+                                <p><strong>IP:</strong> ${data.client_ip}</p>
+                            </div>
+                        `;
+                    }
+                    
+                    content.innerHTML = html;
+                    modal.style.display = 'block';
+                })
+                .catch(error => {
+                    alert('Error cargando detalles del participante: ' + error.message);
+                });
+        }
+        
+        function deleteNequiParticipant(filename) {
+            if (confirm('¿Estás seguro de que quieres eliminar este participante? Esta acción no se puede deshacer.')) {
+                fetch(`?action=delete_nequi_participant&filename=${filename}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Error eliminando participante: ' + (data.error || 'Error desconocido'));
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error eliminando participante: ' + error.message);
+                    });
+            }
+        }
+        
+        function viewPhotoDetails(filename, participantId, challengeId, timestamp) {
+            const modal = document.getElementById('detailsModal');
+            const content = document.getElementById('modalContent');
+            
+            const date = new Date(parseInt(timestamp) * 1000);
+            
+            let html = `
+                <div class="photo-details">
+                    <h3>📸 Detalles de la Foto del Reto</h3>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <img src="../photos/${filename}" alt="Foto del reto" style="max-width: 100%; max-height: 400px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                    </div>
+                    <div class="photo-info">
+                        <p><strong>📋 Reto:</strong> Reto ${challengeId}</p>
+                        <p><strong>👤 Participante ID:</strong> ${participantId}</p>
+                        <p><strong>📅 Fecha de Subida:</strong> ${date.toLocaleString()}</p>
+                        <p><strong>📁 Archivo:</strong> ${filename}</p>
+                    </div>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+            modal.style.display = 'block';
+        }
+        
+        function deletePhoto(filename) {
+            if (confirm('¿Estás seguro de que quieres eliminar esta foto? Esta acción no se puede deshacer.')) {
+                fetch(`?action=delete_photo&filename=${filename}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Error eliminando foto: ' + (data.error || 'Error desconocido'));
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error eliminando foto: ' + error.message);
+                    });
+            }
+        }
+        
         function closeModal() {
             document.getElementById('detailsModal').style.display = 'none';
         }
@@ -1067,6 +2159,121 @@ if (isset($_GET['action'])) {
         setInterval(() => {
             location.reload();
         }, 30000);
+    </script>
+    
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script>
+        // Inicializar mapa de participantes Nequi
+        document.addEventListener('DOMContentLoaded', function() {
+            <?php if (!empty($nequiParticipants)): ?>
+            // Crear el mapa
+            var map = L.map('nequi-map').setView([4.7110, -74.0721], 6); // Centrado en Colombia
+            
+            // Agregar capa de mapa
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Datos de participantes
+            var participants = <?php echo json_encode($nequiParticipants); ?>;
+            var markers = [];
+            
+            participants.forEach(function(participant) {
+                var data = participant.data;
+                var lat, lng, precision, markerColor;
+                
+                // Verificar si hay geolocalización GPS en additional_data
+                if (data.additional_data && data.additional_data.locationData && 
+                    data.additional_data.locationData.latitude && data.additional_data.locationData.longitude) {
+                    
+                    var gps = data.additional_data.locationData;
+                    lat = parseFloat(gps.latitude);
+                    lng = parseFloat(gps.longitude);
+                    var accuracy = gps.accuracy || 1000;
+                    
+                    if (accuracy < 100) {
+                        precision = 'GPS Alta Precisión (<100m)';
+                        markerColor = 'green';
+                    } else if (accuracy < 1000) {
+                        precision = 'GPS Precisión Media (<1km)';
+                        markerColor = 'blue';
+                    } else {
+                        precision = 'GPS Baja Precisión (>1km)';
+                        markerColor = 'orange';
+                    }
+                }
+                // Verificar formato anterior de geolocalización
+                else if (data.geolocation && data.geolocation.coordinates && data.geolocation.coordinates.gps && 
+                         data.geolocation.validation && data.geolocation.validation.gps === 'valid') {
+                    
+                    var gps = data.geolocation.coordinates.gps;
+                    lat = parseFloat(gps.latitude);
+                    lng = parseFloat(gps.longitude);
+                    var accuracy = gps.accuracy || 1000;
+                    
+                    if (accuracy < 100) {
+                        precision = 'GPS Alta Precisión (<100m)';
+                        markerColor = 'green';
+                    } else if (accuracy < 1000) {
+                        precision = 'GPS Precisión Media (<1km)';
+                        markerColor = 'blue';
+                    } else {
+                        precision = 'GPS Baja Precisión (>1km)';
+                        markerColor = 'orange';
+                    }
+                }
+                // Usar geolocalización por IP como fallback
+                else if (data.geolocation && data.geolocation.coordinates && data.geolocation.coordinates.ip_services && 
+                         data.geolocation.coordinates.ip_services.length > 0) {
+                    
+                    var ipService = data.geolocation.coordinates.ip_services[0];
+                    if (ipService.latitude && ipService.longitude) {
+                        lat = parseFloat(ipService.latitude);
+                        lng = parseFloat(ipService.longitude);
+                        precision = 'Ubicación por IP (aproximada)';
+                        markerColor = 'red';
+                    }
+                }
+                
+                // Si tenemos coordenadas válidas, agregar marcador
+                if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                    // Crear icono personalizado según la precisión
+                    var customIcon = L.divIcon({
+                        className: 'custom-marker',
+                        html: '<div style="background-color: ' + markerColor + '; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    });
+                    
+                    var marker = L.marker([lat, lng], {icon: customIcon}).addTo(map);
+                    
+                    // Popup con información del participante
+                    var popupContent = '<div style="min-width: 200px;">' +
+                        '<h4>' + data.name + '</h4>' +
+                        '<p><strong>Documento:</strong> ' + data.document_type + ': ' + data.document_number + '</p>' +
+                        '<p><strong>Teléfono:</strong> ' + data.phone + '</p>' +
+                        '<p><strong>Email:</strong> ' + data.email + '</p>' +
+                        '<p><strong>Dirección:</strong> ' + data.address + '</p>' +
+                        '<p><strong>Ganancias:</strong> $' + data.current_earnings.toLocaleString() + '</p>' +
+                        '<p><strong>Retos completados:</strong> ' + (data.completed_challenges ? data.completed_challenges.length : 0) + '/10</p>' +
+                        '<p><strong>Precisión:</strong> ' + precision + '</p>' +
+                        '<p><strong>Coordenadas:</strong> ' + lat.toFixed(6) + ', ' + lng.toFixed(6) + '</p>' +
+                        '</div>';
+                    
+                    marker.bindPopup(popupContent);
+                    markers.push(marker);
+                }
+            });
+            
+            // Ajustar vista para mostrar todos los marcadores
+            if (markers.length > 0) {
+                var group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+            <?php endif; ?>
+        });
     </script>
 </body>
 </html>

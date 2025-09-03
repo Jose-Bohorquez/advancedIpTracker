@@ -1,0 +1,5 @@
+<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#4f81bd"/>
+  <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" dy=".3em">Reto 1 Completado</text>
+  <text x="50%" y="70%" font-family="Arial, sans-serif" font-size="14" fill="#f0f0f0" text-anchor="middle" dy=".3em">Foto de Prueba</text>
+</svg>

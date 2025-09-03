@@ -1,0 +1,23 @@
+{
+    "name": "Juan Pérez",
+    "document_type": "CC",
+    "document_number": "12345678",
+    "email": "juan.perez@email.com",
+    "phone": "3001234567",
+    "address": "Calle 123 #45-67, Bogotá",
+    "current_earnings": 15000,
+    "status": "active",
+    "timestamp": "2025-09-03T02:55:00.000Z",
+    "completed_challenges": [
+        {
+            "challengeId": 1,
+            "completedAt": "2025-09-03T02:56:00.000Z"
+        },
+        {
+            "challengeId": 3,
+            "completedAt": "2025-09-03T02:57:00.000Z"
+        }
+    ],
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "client_ip": "192.168.1.100"
+}
