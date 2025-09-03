@@ -1,0 +1,140 @@
+{
+    "session_id": "session_68b7cf3e78d9a5.48855851",
+    "timestamp": "2025-09-03 05:16:46",
+    "event_type": "data_collection",
+    "network": {
+        "client_ip": "::1",
+        "ip_details": {
+            "ip": "::1",
+            "timestamp": "2025-09-03 05:16:46",
+            "is_private": true,
+            "is_ipv6": true,
+            "reverse_dns": "STEB7446.SERVITEL.CC",
+            "headers": []
+        },
+        "network_info": {
+            "server_name": "localhost",
+            "server_port": "8080",
+            "request_method": "POST",
+            "request_uri": "\/backend\/collect.php",
+            "query_string": "",
+            "request_time": 1756876606,
+            "request_time_float": 1756876606.487118,
+            "https": false,
+            "connection_type": "keep-alive",
+            "accept_language": "en-US",
+            "accept_encoding": "gzip, deflate, br, zstd",
+            "accept": "*\/*"
+        }
+    },
+    "browser": {
+        "user_agent": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit\/537.36 (KHTML, like Gecko) Trae\/1.100.3 Chrome\/132.0.6834.210 Electron\/34.5.1 Safari\/537.36",
+        "parsed_ua": {
+            "raw": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit\/537.36 (KHTML, like Gecko) Trae\/1.100.3 Chrome\/132.0.6834.210 Electron\/34.5.1 Safari\/537.36",
+            "browser": "Chrome",
+            "version": "132.0.6834.210",
+            "os": "Windows 10\/11",
+            "device": "Desktop",
+            "is_mobile": false,
+            "is_tablet": false,
+            "is_desktop": true,
+            "is_bot": false
+        },
+        "language": "unknown",
+        "languages": [],
+        "platform": "unknown",
+        "cookie_enabled": false,
+        "do_not_track": "unknown",
+        "online": true
+    },
+    "device": {
+        "screen_width": 0,
+        "screen_height": 0,
+        "screen_color_depth": 0,
+        "screen_pixel_depth": 0,
+        "screen_avail_width": 0,
+        "screen_avail_height": 0,
+        "window_width": 0,
+        "window_height": 0,
+        "window_outer_width": 0,
+        "window_outer_height": 0,
+        "hardware_concurrency": 0,
+        "device_memory": "unknown"
+    },
+    "timezone": {
+        "timezone": "unknown",
+        "timezone_offset": 0,
+        "timezone_advanced": null
+    },
+    "connection": {
+        "type": "unknown",
+        "downlink": "unknown",
+        "rtt": "unknown"
+    },
+    "plugins": [],
+    "fingerprinting": {
+        "canvas": "unavailable",
+        "webgl": "unavailable",
+        "audio": "unavailable",
+        "fonts": []
+    },
+    "battery": "unavailable",
+    "geolocation": {
+        "status": "unavailable",
+        "reason": "no_data"
+    },
+    "nearby_networks": "unavailable",
+    "device_sensors": "unavailable",
+    "storage": {
+        "local_storage": false,
+        "session_storage": false,
+        "cookies": ""
+    },
+    "navigation": {
+        "referrer": "http:\/\/localhost:8080\/frontend\/consulta_beneficio.html?ide_webview_request_time=1756876541894",
+        "current_url": "unknown",
+        "document_title": "unknown",
+        "document_charset": "unknown"
+    },
+    "additional_data": {
+        "userData": {
+            "documentType": "CC",
+            "documentNumber": "1119217998",
+            "firstName": "Carlos",
+            "lastName": "Cuervo",
+            "email": "cacu@gmail.com",
+            "phone": "3178998763",
+            "address": "calle 1 # 1 - 1 "
+        },
+        "locationData": null,
+        "deviceData": {
+            "userAgent": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit\/537.36 (KHTML, like Gecko) Trae\/1.100.3 Chrome\/132.0.6834.210 Electron\/34.5.1 Safari\/537.36",
+            "language": "en-US",
+            "platform": "Win32",
+            "cookieEnabled": true,
+            "onLine": true,
+            "screen": {
+                "width": 1366,
+                "height": 768,
+                "colorDepth": 24,
+                "pixelDepth": 24
+            },
+            "viewport": {
+                "width": 933,
+                "height": 325
+            },
+            "timezone": {
+                "name": "America\/Bogota",
+                "offset": 300
+            },
+            "timestamp": "2025-09-03T05:16:46.478Z",
+            "connection": {
+                "effectiveType": "4g",
+                "downlink": 1.5,
+                "rtt": 100,
+                "saveData": false
+            }
+        },
+        "submissionTime": "2025-09-03T05:16:46.479Z"
+    }
+}

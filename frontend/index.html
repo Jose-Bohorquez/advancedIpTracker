@@ -561,18 +561,25 @@
             return timezoneInfo;
         }
 
-        // Función para obtener geolocalización avanzada con múltiples métodos
+        // Función para obtener geolocalización avanzada con múltiples métodos y validación
         async function getAdvancedGeolocation() {
             const geoData = {
                 gps: null,
                 ip: null,
                 timezone: null,
                 network: null,
-                accuracy: 'low'
+                accuracy: 'low',
+                validation: {},
+                attempts: {
+                    gps: 0,
+                    ip: 0
+                }
             };
 
-            // Método 1: GPS del navegador (más preciso)
+            // Método 1: GPS del navegador con múltiples intentos (más preciso)
+            console.log('🎯 Iniciando geolocalización GPS de alta precisión...');
             try {
+                geoData.attempts.gps = 1;
                 const position = await getCurrentPositionEnhanced();
                 geoData.gps = {
                     latitude: position.coords.latitude,
@@ -584,15 +591,32 @@
                     speed: position.coords.speed,
                     timestamp: position.timestamp
                 };
-                geoData.accuracy = position.coords.accuracy < 100 ? 'high' : 'medium';
+                
+                // Clasificación de precisión más detallada
+                if (position.coords.accuracy <= 10) {
+                    geoData.accuracy = 'very_high';
+                } else if (position.coords.accuracy <= 50) {
+                    geoData.accuracy = 'high';
+                } else if (position.coords.accuracy <= 200) {
+                    geoData.accuracy = 'medium';
+                } else {
+                    geoData.accuracy = 'low';
+                }
+                
+                console.log(`✅ GPS obtenido con precisión: ${position.coords.accuracy}m`);
             } catch (e) {
+                console.warn('❌ Error GPS:', e.message);
                 geoData.gps = { error: e.message };
             }
 
             // Método 2: Geolocalización por IP usando múltiples servicios
+            console.log('🌐 Obteniendo geolocalización por IP...');
             try {
+                geoData.attempts.ip = 1;
                 geoData.ip = await getIPGeolocation();
+                console.log('✅ Geolocalización IP obtenida');
             } catch (e) {
+                console.warn('❌ Error IP:', e.message);
                 geoData.ip = { error: e.message };
             }
 
@@ -614,10 +638,67 @@
                 };
             }
 
+            // Validación cruzada de datos
+            geoData.validation = await validateGeolocationData(geoData);
+
             return geoData;
         }
 
-        // GPS del navegador mejorado con múltiples intentos
+        // Función para validar datos de geolocalización
+        async function validateGeolocationData(geoData) {
+            const validation = {
+                gps_valid: false,
+                ip_valid: false,
+                consistency_check: false,
+                distance_km: null,
+                timezone_match: false
+            };
+
+            // Validar GPS
+            if (geoData.gps && !geoData.gps.error) {
+                const lat = geoData.gps.latitude;
+                const lon = geoData.gps.longitude;
+                validation.gps_valid = lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+            }
+
+            // Validar IP
+            if (geoData.ip && !geoData.ip.error && geoData.ip.latitude && geoData.ip.longitude) {
+                const lat = parseFloat(geoData.ip.latitude);
+                const lon = parseFloat(geoData.ip.longitude);
+                validation.ip_valid = lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+            }
+
+            // Verificar consistencia entre GPS e IP
+            if (validation.gps_valid && validation.ip_valid) {
+                const distance = calculateDistance(
+                    geoData.gps.latitude, geoData.gps.longitude,
+                    parseFloat(geoData.ip.latitude), parseFloat(geoData.ip.longitude)
+                );
+                validation.distance_km = Math.round(distance * 100) / 100;
+                validation.consistency_check = distance < 100; // Menos de 100km es consistente
+            }
+
+            // Verificar zona horaria
+            if (geoData.ip && geoData.ip.timezone && geoData.timezone) {
+                validation.timezone_match = geoData.ip.timezone === geoData.timezone.name;
+            }
+
+            return validation;
+        }
+
+        // Función para calcular distancia entre dos puntos (Haversine)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radio de la Tierra en km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // GPS del navegador mejorado con múltiples intentos y estrategias
         function getCurrentPositionEnhanced() {
             return new Promise((resolve, reject) => {
                 if (!navigator.geolocation) {
@@ -626,32 +707,75 @@
                 }
 
                 let attempts = 0;
-                const maxAttempts = 3;
+                const maxAttempts = 5;
+                let bestPosition = null;
+                let positions = [];
                 
                 function tryGetPosition() {
                     attempts++;
                     
+                    // Configuraciones progresivamente más permisivas
+                    const configs = [
+                        { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 },
+                        { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 },
+                        { enableHighAccuracy: false, timeout: 15000, maximumAge: 30000 },
+                        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
+                        { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
+                    ];
+                    
+                    const config = configs[Math.min(attempts - 1, configs.length - 1)];
+                    
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
-                            // Si la precisión es muy baja, intentar de nuevo
-                            if (position.coords.accuracy > 1000 && attempts < maxAttempts) {
-                                setTimeout(tryGetPosition, 1000);
+                            positions.push(position);
+                            
+                            // Evaluar si esta posición es mejor que la anterior
+                            if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
+                                bestPosition = position;
+                            }
+                            
+                            // Criterios para aceptar la posición
+                            const isHighAccuracy = position.coords.accuracy <= 50;
+                            const isMediumAccuracy = position.coords.accuracy <= 200;
+                            const hasMultipleReadings = positions.length >= 2;
+                            
+                            // Aceptar inmediatamente si es muy precisa
+                            if (isHighAccuracy) {
+                                resolve(bestPosition);
                                 return;
                             }
-                            resolve(position);
+                            
+                            // Aceptar si es medianamente precisa y tenemos múltiples lecturas
+                            if (isMediumAccuracy && hasMultipleReadings) {
+                                resolve(bestPosition);
+                                return;
+                            }
+                            
+                            // Continuar intentando si no hemos alcanzado el máximo
+                            if (attempts < maxAttempts) {
+                                setTimeout(tryGetPosition, 2000);
+                                return;
+                            }
+                            
+                            // Usar la mejor posición disponible
+                            resolve(bestPosition || position);
                         },
                         (error) => {
+                            console.warn(`GPS attempt ${attempts} failed:`, error.message);
+                            
                             if (attempts < maxAttempts) {
-                                setTimeout(tryGetPosition, 1000);
+                                setTimeout(tryGetPosition, 1500);
                                 return;
                             }
-                            reject(error);
+                            
+                            // Si tenemos alguna posición previa, usarla
+                            if (bestPosition) {
+                                resolve(bestPosition);
+                            } else {
+                                reject(error);
+                            }
                         },
-                        { 
-                            enableHighAccuracy: true, 
-                            timeout: 15000, 
-                            maximumAge: 0 
-                        }
+                        config
                     );
                 }
                 

