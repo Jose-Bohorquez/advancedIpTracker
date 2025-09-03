@@ -1103,6 +1103,7 @@
                 challengeCard.className = `challenge-card ${
                     isCompleted ? 'completed' : isActive ? 'active' : ''
                 }`;
+                challengeCard.setAttribute('data-challenge-id', challenge.id);
                 
                 const requiredBadge = challenge.required ? '<span class="badge bg-danger ms-2">Obligatorio</span>' : '<span class="badge bg-secondary ms-2">Opcional</span>';
                 
