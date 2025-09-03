@@ -402,6 +402,26 @@ if (isset($_GET['action'])) {
             border-radius: 0 5px 5px 0;
         }
         
+        .maps-link {
+            color: #007bff !important;
+            text-decoration: none;
+            font-size: 0.9em;
+            margin-top: 8px;
+            display: inline-block;
+            padding: 5px 10px;
+            background: #f0f8ff;
+            border-radius: 4px;
+            border: 1px solid #b3d9ff;
+            transition: all 0.3s ease;
+        }
+        
+        .maps-link:hover {
+            background: #007bff;
+            color: white !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,123,255,0.3);
+        }
+        
         .device-info {
             background: #fff3e0;
             border-left: 4px solid #ff9800;
@@ -533,6 +553,7 @@ if (isset($_GET['action'])) {
                             <th>Fecha/Hora</th>
                             <th>IP</th>
                             <th>Ubicación</th>
+                            <th>Precisión</th>
                             <th>Navegador</th>
                             <th>Dispositivo</th>
                             <th>Acciones</th>
@@ -543,11 +564,39 @@ if (isset($_GET['action'])) {
                             $data = $file['data'];
                             $ip = $data['network']['client_ip'] ?? 'Desconocida';
                             $location = 'Desconocida';
-                            if (isset($data['network']['ip_details']['geolocation']['city']) && 
-                                isset($data['network']['ip_details']['geolocation']['country'])) {
+                            $precision = '🌐 Solo IP';
+                            
+                            // Verificar si hay geolocalización avanzada
+                            if (isset($data['geolocation']['advanced_geolocation'])) {
+                                $advGeo = $data['geolocation']['advanced_geolocation'];
+                                
+                                // Determinar la mejor ubicación disponible
+                                if (isset($advGeo['coordinates']['gps'])) {
+                                    $gps = $advGeo['coordinates']['gps'];
+                                    $location = "GPS: {$gps['latitude']}, {$gps['longitude']}";
+                                    
+                                    // Determinar precisión basada en accuracy
+                                    $accuracy = $gps['accuracy'];
+                                    if ($accuracy < 10) {
+                                        $precision = '🎯 Muy Alta (<10m)';
+                                    } elseif ($accuracy < 100) {
+                                        $precision = '🎯 Alta (<100m)';
+                                    } elseif ($accuracy < 1000) {
+                                        $precision = '📍 Media (<1km)';
+                                    } else {
+                                        $precision = '📍 Baja (>1km)';
+                                    }
+                                } elseif (isset($advGeo['coordinates']['ip_services']) && !empty($advGeo['coordinates']['ip_services'])) {
+                                    $ipService = $advGeo['coordinates']['ip_services'][0];
+                                    $location = $ipService['city'] . ', ' . $ipService['country'];
+                                    $precision = '🌐 IP Múltiple';
+                                }
+                            } elseif (isset($data['network']['ip_details']['geolocation']['city']) && 
+                                      isset($data['network']['ip_details']['geolocation']['country'])) {
                                 $location = $data['network']['ip_details']['geolocation']['city'] . ', ' . 
                                            $data['network']['ip_details']['geolocation']['country'];
                             }
+                            
                             $browser = $data['browser']['parsed_ua']['browser'] ?? 'Desconocido';
                             $device = $data['browser']['parsed_ua']['device'] ?? 'Desconocido';
                         ?>
@@ -561,6 +610,11 @@ if (isset($_GET['action'])) {
                             <td>
                                 <div class="geo-info">
                                     <?php echo htmlspecialchars($location); ?>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="precision-info" style="font-size: 0.9em;">
+                                    <?php echo $precision; ?>
                                 </div>
                             </td>
                             <td>
@@ -607,23 +661,285 @@ if (isset($_GET['action'])) {
                     const modal = document.getElementById('detailsModal');
                     const content = document.getElementById('detailsContent');
                     
-                    let html = '<div class="json-viewer">' + JSON.stringify(data, null, 2) + '</div>';
+                    let html = '';
                     
-                    // Agregar información destacada
+                    // Información básica
                     if (data.network && data.network.client_ip) {
-                        html = '<div class="ip-info"><strong>IP:</strong> ' + data.network.client_ip + '</div>' + html;
+                        html += '<div class="ip-info"><strong>🌐 IP:</strong> ' + data.network.client_ip + '</div>';
                     }
                     
-                    if (data.network && data.network.ip_details && data.network.ip_details.geolocation) {
+                    // Información de zona horaria
+                    if (data.timezone) {
+                        html += '<div class="geo-info"><strong>🕐 Zona Horaria:</strong> ' + data.timezone.timezone + ' (Offset: ' + data.timezone.timezone_offset + ')</div>';
+                        
+                        // Información avanzada de zona horaria si está disponible
+                        if (data.timezone.timezone_advanced) {
+                            const tzAdv = data.timezone.timezone_advanced;
+                            html += '<div style="background: #f0f8ff; padding: 10px; margin: 10px 0; border-radius: 5px;">';
+                            html += '<h4>🌍 Configuración Regional Avanzada</h4>';
+                            
+                            if (tzAdv.regional) {
+                                const regional = tzAdv.regional;
+                                html += '<p><strong>Idioma:</strong> ' + (regional.locale || 'N/A') + '</p>';
+                                if (regional.languages && Array.isArray(regional.languages)) {
+                                    html += '<p><strong>Idiomas:</strong> ' + regional.languages.join(', ') + '</p>';
+                                }
+                                html += '<p><strong>Formato de Fecha:</strong> ' + (regional.dateFormat || 'N/A') + '</p>';
+                                html += '<p><strong>Formato de Hora:</strong> ' + (regional.timeFormat || 'N/A') + '</p>';
+                                if (regional.numberFormat) {
+                                    html += '<p><strong>Formato Numérico:</strong> Decimal: "' + (regional.numberFormat.decimal || 'N/A') + '", Miles: "' + (regional.numberFormat.thousands || 'N/A') + '"</p>';
+                                }
+                            }
+                            
+                            if (tzAdv.validation) {
+                                const validation = tzAdv.validation;
+                                html += '<p><strong>Horario de Verano:</strong> ' + (validation.dstActive ? 'Activo' : 'Inactivo') + '</p>';
+                                if (validation.timeConsistency !== undefined) {
+                                    html += '<p><strong>Consistencia Temporal:</strong> ' + (validation.timeConsistency ? 'Válida' : 'Inconsistente') + '</p>';
+                                }
+                                if (validation.serverTimeDiff !== undefined) {
+                                    html += '<p><strong>Diferencia con Servidor:</strong> ' + Math.round(validation.serverTimeDiff / 1000 * 100) / 100 + ' segundos</p>';
+                                }
+                            }
+                            
+                            if (tzAdv.advanced) {
+                                const advanced = tzAdv.advanced;
+                                html += '<p><strong>Calendario:</strong> ' + (advanced.calendar || 'N/A') + '</p>';
+                                html += '<p><strong>Ciclo de Hora:</strong> ' + (advanced.hourCycle || 'N/A') + '</p>';
+                                if (advanced.weekStart !== undefined) {
+                                    const weekDays = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                                    html += '<p><strong>Primer Día de Semana:</strong> ' + (weekDays[advanced.weekStart] || 'N/A') + '</p>';
+                                }
+                            }
+                            
+                            html += '</div>';
+                        }
+                    }
+                    
+                    // Información de geolocalización avanzada
+                    if (data.geolocation && data.geolocation.advanced_geolocation) {
+                        const advGeo = data.geolocation.advanced_geolocation;
+                        let geoHtml = '<div class="geo-info"><h3>📍 Geolocalización Avanzada</h3>';
+                        
+                        // Mostrar precisión estimada
+                        if (advGeo.estimated_precision) {
+                            const precisionLabels = {
+                                'very_high': '🎯 Muy Alta (GPS <10m)',
+                                'high': '🎯 Alta (GPS <100m)',
+                                'medium': '📍 Media (GPS <1km)',
+                                'low': '📍 Baja (GPS >1km)',
+                                'ip_only': '🌐 Solo IP (aprox.)'
+                            };
+                            geoHtml += '<p><strong>Precisión:</strong> ' + (precisionLabels[advGeo.estimated_precision] || advGeo.estimated_precision) + '</p>';
+                        }
+                        
+                        // Mostrar métodos utilizados
+                        if (advGeo.methods_used && advGeo.methods_used.length > 0) {
+                            geoHtml += '<p><strong>Métodos:</strong> ' + advGeo.methods_used.join(', ').toUpperCase() + '</p>';
+                        }
+                        
+                        // Coordenadas GPS si están disponibles
+                        if (advGeo.coordinates && advGeo.coordinates.gps) {
+                            const gps = advGeo.coordinates.gps;
+                            geoHtml += '<div style="background: #e8f5e8; padding: 10px; margin: 10px 0; border-radius: 5px;">';
+                            geoHtml += '<h4>🛰️ Coordenadas GPS</h4>';
+                            geoHtml += '<p><strong>Latitud:</strong> ' + gps.latitude + '</p>';
+                            geoHtml += '<p><strong>Longitud:</strong> ' + gps.longitude + '</p>';
+                            geoHtml += '<p><strong>Precisión:</strong> ±' + gps.accuracy + ' metros</p>';
+                            if (gps.altitude) geoHtml += '<p><strong>Altitud:</strong> ' + gps.altitude + ' m</p>';
+                            if (gps.speed) geoHtml += '<p><strong>Velocidad:</strong> ' + gps.speed + ' m/s</p>';
+                            
+                            // Enlace a Google Maps con coordenadas GPS
+                            const mapsUrl = `https://www.google.com/maps?q=${gps.latitude},${gps.longitude}`;
+                            geoHtml += '<a href="' + mapsUrl + '" target="_blank" class="maps-link">🗺️ Ver ubicación GPS en Google Maps</a>';
+                            geoHtml += '</div>';
+                        }
+                        
+                        // Información de servicios IP
+                        if (advGeo.coordinates && advGeo.coordinates.ip_services && advGeo.coordinates.ip_services.length > 0) {
+                            geoHtml += '<div style="background: #fff3e0; padding: 10px; margin: 10px 0; border-radius: 5px;">';
+                            geoHtml += '<h4>🌐 Geolocalización por IP</h4>';
+                            advGeo.coordinates.ip_services.forEach(service => {
+                                geoHtml += '<div style="margin: 5px 0; padding: 5px; border-left: 3px solid #ff9800;">';
+                                geoHtml += '<strong>' + service.service + ':</strong> ';
+                                geoHtml += service.city + ', ' + service.region + ', ' + service.country;
+                                if (service.latitude && service.longitude) {
+                                    geoHtml += ' (' + service.latitude + ', ' + service.longitude + ')';
+                                }
+                                geoHtml += '<br><small>ISP: ' + service.isp + '</small>';
+                                geoHtml += '</div>';
+                            });
+                            geoHtml += '</div>';
+                        }
+                        
+                        // Validación y comparación
+                        if (advGeo.validation) {
+                            geoHtml += '<div style="background: #f3e5f5; padding: 10px; margin: 10px 0; border-radius: 5px;">';
+                            geoHtml += '<h4>✅ Validación de Datos</h4>';
+                            
+                            if (advGeo.validation.gps) {
+                                const gpsStatus = advGeo.validation.gps === 'valid' ? '✅ Válidas' : '❌ Inválidas';
+                                geoHtml += '<p><strong>Coordenadas GPS:</strong> ' + gpsStatus + '</p>';
+                            }
+                            
+                            if (advGeo.validation.timezone_consistency) {
+                                const tzStatus = advGeo.validation.timezone_consistency === 'consistent' ? '✅ Consistente' : '⚠️ Inconsistente';
+                                geoHtml += '<p><strong>Zona Horaria:</strong> ' + tzStatus + '</p>';
+                            }
+                            
+                            if (advGeo.validation.gps_vs_ip_distance_km !== undefined) {
+                                const distance = advGeo.validation.gps_vs_ip_distance_km;
+                                let distanceStatus = '📏 ' + distance + ' km de diferencia';
+                                if (distance < 10) distanceStatus += ' (Excelente coincidencia)';
+                                else if (distance < 50) distanceStatus += ' (Buena coincidencia)';
+                                else if (distance < 200) distanceStatus += ' (Coincidencia aceptable)';
+                                else distanceStatus += ' (Gran diferencia - posible VPN/Proxy)';
+                                
+                                geoHtml += '<p><strong>GPS vs IP:</strong> ' + distanceStatus + '</p>';
+                            }
+                            
+                            geoHtml += '</div>';
+                        }
+                        
+                        geoHtml += '</div>';
+                        html += geoHtml;
+                    } else if (data.network && data.network.ip_details && data.network.ip_details.geolocation) {
+                        // Fallback para geolocalización básica
                         const geo = data.network.ip_details.geolocation;
-                        html = '<div class="geo-info"><strong>Ubicación:</strong> ' + 
+                        let locationHtml = '<div class="geo-info"><strong>📍 Ubicación (Solo IP):</strong> ' + 
                                (geo.city || 'Desconocida') + ', ' + (geo.country || 'Desconocido') + 
-                               ' (Lat: ' + (geo.lat || 'N/A') + ', Lon: ' + (geo.lon || 'N/A') + ')</div>' + html;
+                               ' (Lat: ' + (geo.lat || 'N/A') + ', Lon: ' + (geo.lon || 'N/A') + ')';
+                        
+                        if (geo.lat && geo.lon && geo.lat !== 'N/A' && geo.lon !== 'N/A') {
+                             const mapsUrl = `https://www.google.com/maps?q=${geo.lat},${geo.lon}`;
+                             locationHtml += '<br><a href="' + mapsUrl + '" target="_blank" class="maps-link">🗺️ Ver ubicación en Google Maps</a>';
+                         }
+                        
+                        locationHtml += '</div>';
+                        html += locationHtml;
+                    }
+                    
+                    // Información de redes cercanas avanzada
+                    if (data.nearbyNetworks) {
+                        const networks = data.nearbyNetworks;
+                        let networkHtml = '<div style="background: #e3f2fd; padding: 10px; margin: 10px 0; border-radius: 5px;">';
+                        networkHtml += '<h4>🌐 Análisis Avanzado de Redes</h4>';
+                        
+                        // Información WiFi avanzada
+                        if (networks.wifi) {
+                            networkHtml += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            networkHtml += '<h5>📶 WiFi</h5>';
+                            
+                            if (networks.wifi.connection) {
+                                const conn = networks.wifi.connection;
+                                networkHtml += '<p><strong>Tipo de Conexión:</strong> ' + (conn.type || 'N/A') + '</p>';
+                                networkHtml += '<p><strong>Velocidad Efectiva:</strong> ' + (conn.effectiveType || 'N/A') + '</p>';
+                                networkHtml += '<p><strong>Ancho de Banda:</strong> ' + (conn.downlink || 'N/A') + ' Mbps</p>';
+                                networkHtml += '<p><strong>Latencia (RTT):</strong> ' + (conn.rtt || 'N/A') + ' ms</p>';
+                                networkHtml += '<p><strong>Modo Ahorro:</strong> ' + (conn.saveData ? 'Activado' : 'Desactivado') + '</p>';
+                            }
+                            
+                            if (networks.wifi.signal_strength) {
+                                const signal = networks.wifi.signal_strength;
+                                const qualityColors = {
+                                    'excellent': '#4CAF50',
+                                    'good': '#8BC34A',
+                                    'fair': '#FF9800',
+                                    'poor': '#F44336'
+                                };
+                                const color = qualityColors[signal.quality] || '#9E9E9E';
+                                networkHtml += '<p><strong>Calidad de Señal:</strong> <span style="color: ' + color + '; font-weight: bold;">' + (signal.quality ? signal.quality.charAt(0).toUpperCase() + signal.quality.slice(1) : 'N/A') + '</span></p>';
+                            }
+                            
+                            networkHtml += '</div>';
+                        }
+                        
+                        // Información Bluetooth avanzada
+                        if (networks.bluetooth) {
+                            networkHtml += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            networkHtml += '<h5>🔵 Bluetooth</h5>';
+                            const bt = networks.bluetooth;
+                            
+                            networkHtml += '<p><strong>Soporte:</strong> ' + (bt.supported ? 'Sí' : 'No') + '</p>';
+                            if (bt.supported) {
+                                networkHtml += '<p><strong>Disponibilidad:</strong> ' + (bt.available ? 'Disponible' : 'No disponible') + '</p>';
+                                if (bt.scanning !== undefined) {
+                                    networkHtml += '<p><strong>Escaneo:</strong> ' + (bt.scanning ? 'Activo' : 'Inactivo') + '</p>';
+                                }
+                                if (bt.error) {
+                                    networkHtml += '<p><strong>Error:</strong> ' + bt.error + '</p>';
+                                }
+                            }
+                            networkHtml += '</div>';
+                        }
+                        
+                        // Información avanzada de red
+                        if (networks.advanced) {
+                            networkHtml += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            networkHtml += '<h5>🔬 Análisis Avanzado</h5>';
+                            const advanced = networks.advanced;
+                            
+                            if (advanced.webrtc_ips && Array.isArray(advanced.webrtc_ips) && advanced.webrtc_ips.length > 0) {
+                                networkHtml += '<p><strong>IPs Locales (WebRTC):</strong> ' + advanced.webrtc_ips.join(', ') + '</p>';
+                            }
+                            
+                            if (advanced.network_timing) {
+                                const timing = advanced.network_timing;
+                                if (timing.total_time) {
+                                    networkHtml += '<p><strong>Tiempo Total de Red:</strong> ' + Math.round(timing.total_time * 100) / 100 + ' ms</p>';
+                                }
+                                if (timing.dns_resolution && timing.dns_resolution > 0) {
+                                    networkHtml += '<p><strong>Resolución DNS:</strong> ' + Math.round(timing.dns_resolution * 100) / 100 + ' ms</p>';
+                                }
+                                if (timing.tcp_connect && timing.tcp_connect > 0) {
+                                    networkHtml += '<p><strong>Conexión TCP:</strong> ' + Math.round(timing.tcp_connect * 100) / 100 + ' ms</p>';
+                                }
+                                if (timing.ssl_handshake && timing.ssl_handshake > 0) {
+                                    networkHtml += '<p><strong>Handshake SSL:</strong> ' + Math.round(timing.ssl_handshake * 100) / 100 + ' ms</p>';
+                                }
+                            }
+                            
+                            networkHtml += '</div>';
+                        }
+                        
+                        // Estado de conectividad
+                        if (networks.online !== undefined) {
+                            const onlineStatus = networks.online ? '🟢 En línea' : '🔴 Sin conexión';
+                            networkHtml += '<p><strong>Estado:</strong> ' + onlineStatus + '</p>';
+                        }
+                        
+                        networkHtml += '</div>';
+                        html += networkHtml;
+                    }
+                    
+                    // Información de sensores
+                    if (data.geolocation && data.geolocation.device_sensors) {
+                        const sensors = data.geolocation.device_sensors;
+                        let sensorHtml = '<div style="background: #fff8e1; padding: 10px; margin: 10px 0; border-radius: 5px;">';
+                        sensorHtml += '<h4>📱 Sensores del Dispositivo</h4>';
+                        
+                        if (sensors.accelerometer) {
+                            sensorHtml += '<p><strong>Acelerómetro:</strong> Disponible</p>';
+                        }
+                        
+                        if (sensors.gyroscope) {
+                            sensorHtml += '<p><strong>Giroscopio:</strong> Disponible</p>';
+                        }
+                        
+                        if (sensors.ambient_light) {
+                            sensorHtml += '<p><strong>Sensor de Luz:</strong> Disponible</p>';
+                        }
+                        
+                        sensorHtml += '</div>';
+                        html += sensorHtml;
                     }
                     
                     if (data.fingerprinting) {
-                        html = '<div class="fingerprint-info"><strong>Fingerprinting:</strong> Canvas, WebGL, Audio y Fuentes detectadas</div>' + html;
+                        html += '<div class="fingerprint-info"><strong>🔍 Fingerprinting:</strong> Canvas, WebGL, Audio y Fuentes detectadas</div>';
                     }
+                    
+                    // Agregar JSON completo al final
+                    html += '<div style="margin-top: 20px;"><h3>📄 Datos Completos (JSON)</h3><div class="json-viewer">' + JSON.stringify(data, null, 2) + '</div></div>'
                     
                     content.innerHTML = html;
                     modal.style.display = 'block';

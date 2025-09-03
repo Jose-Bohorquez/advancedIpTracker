@@ -1,0 +1,115 @@
+{
+    "session_id": "track_1756873931986_c9gkywvge",
+    "timestamp": "2025-09-03 04:32:14",
+    "event_type": "page_exit",
+    "network": {
+        "client_ip": "181.61.246.34",
+        "ip_details": {
+            "ip": "181.61.246.34",
+            "timestamp": "2025-09-03 04:32:14",
+            "is_private": false,
+            "is_ipv6": false,
+            "reverse_dns": "dynamic-ip-1816124634.cable.net.co",
+            "headers": [],
+            "geolocation": {
+                "status": "success",
+                "country": "Colombia",
+                "countryCode": "CO",
+                "region": "DC",
+                "regionName": "Bogota D.C.",
+                "city": "Bogotá",
+                "zip": "111611",
+                "lat": 4.6264,
+                "lon": -74.107,
+                "timezone": "America\/Bogota",
+                "isp": "Telmex Colombia S.A.",
+                "org": "Telmex Colombia S.A.",
+                "as": "AS10620 Telmex Colombia S.A.",
+                "query": "181.61.246.34"
+            }
+        },
+        "network_info": {
+            "server_name": "dev-and-test.space",
+            "server_port": "443",
+            "request_method": "POST",
+            "request_uri": "\/promo_diciembre_2025\/backend\/collect.php",
+            "query_string": "",
+            "request_time": 1756873934,
+            "request_time_float": 1756873934.591646,
+            "https": true,
+            "connection_type": "unknown",
+            "accept_language": "es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3",
+            "accept_encoding": "gzip, deflate, br, zstd",
+            "accept": "*\/*"
+        }
+    },
+    "browser": {
+        "user_agent": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko\/20100101 Firefox\/142.0",
+        "parsed_ua": {
+            "raw": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko\/20100101 Firefox\/142.0",
+            "browser": "Firefox",
+            "version": "142.0",
+            "os": "Windows 10\/11",
+            "device": "Desktop",
+            "is_mobile": false,
+            "is_tablet": false,
+            "is_desktop": true,
+            "is_bot": false
+        },
+        "language": "unknown",
+        "languages": [],
+        "platform": "unknown",
+        "cookie_enabled": false,
+        "do_not_track": "unknown",
+        "online": true
+    },
+    "device": {
+        "screen_width": 0,
+        "screen_height": 0,
+        "screen_color_depth": 0,
+        "screen_pixel_depth": 0,
+        "screen_avail_width": 0,
+        "screen_avail_height": 0,
+        "window_width": 0,
+        "window_height": 0,
+        "window_outer_width": 0,
+        "window_outer_height": 0,
+        "hardware_concurrency": 0,
+        "device_memory": "unknown"
+    },
+    "timezone": {
+        "timezone": "unknown",
+        "timezone_offset": 0
+    },
+    "connection": {
+        "type": "unknown",
+        "downlink": "unknown",
+        "rtt": "unknown"
+    },
+    "plugins": [],
+    "fingerprinting": {
+        "canvas": "unavailable",
+        "webgl": "unavailable",
+        "audio": "unavailable",
+        "fonts": []
+    },
+    "battery": "unavailable",
+    "geolocation": "unavailable",
+    "storage": {
+        "local_storage": false,
+        "session_storage": false,
+        "cookies": ""
+    },
+    "navigation": {
+        "referrer": "https:\/\/dev-and-test.space\/promo_diciembre_2025\/frontend\/",
+        "current_url": "unknown",
+        "document_title": "unknown",
+        "document_charset": "unknown"
+    },
+    "additional_data": {
+        "trackingId": "track_1756873931986_c9gkywvge",
+        "timestamp": "2025-09-03T04:32:17.254Z",
+        "event": "page_exit",
+        "timeOnPage": 5808
+    }
+}

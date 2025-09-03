@@ -104,6 +104,133 @@ function getGeoLocation($ip) {
 }
 
 /**
+ * Procesar datos de geolocalización avanzada
+ */
+function processAdvancedGeolocation($geoData) {
+    if (!is_array($geoData)) {
+        return ['status' => 'unavailable', 'reason' => 'no_data'];
+    }
+    
+    $processed = [
+        'timestamp' => date('Y-m-d H:i:s'),
+        'methods_used' => [],
+        'accuracy_level' => $geoData['accuracy'] ?? 'unknown',
+        'coordinates' => [],
+        'validation' => []
+    ];
+    
+    // Procesar datos GPS del navegador
+    if (isset($geoData['gps']) && is_array($geoData['gps']) && !isset($geoData['gps']['error'])) {
+        $processed['methods_used'][] = 'gps';
+        $processed['coordinates']['gps'] = [
+            'latitude' => $geoData['gps']['latitude'],
+            'longitude' => $geoData['gps']['longitude'],
+            'accuracy' => $geoData['gps']['accuracy'],
+            'altitude' => $geoData['gps']['altitude'],
+            'heading' => $geoData['gps']['heading'],
+            'speed' => $geoData['gps']['speed'],
+            'timestamp' => $geoData['gps']['timestamp']
+        ];
+        
+        // Validar coordenadas GPS
+        $lat = $geoData['gps']['latitude'];
+        $lon = $geoData['gps']['longitude'];
+        if ($lat >= -90 && $lat <= 90 && $lon >= -180 && $lon <= 180) {
+            $processed['validation']['gps'] = 'valid';
+        } else {
+            $processed['validation']['gps'] = 'invalid_coordinates';
+        }
+    }
+    
+    // Procesar datos de geolocalización por IP
+    if (isset($geoData['ip']) && is_array($geoData['ip'])) {
+        $processed['methods_used'][] = 'ip_services';
+        $processed['coordinates']['ip_services'] = [];
+        
+        foreach ($geoData['ip'] as $service) {
+            if (isset($service['data']) && is_array($service['data'])) {
+                $serviceData = $service['data'];
+                $processed['coordinates']['ip_services'][] = [
+                    'service' => $service['service'],
+                    'country' => $serviceData['country'] ?? $serviceData['country_name'] ?? 'unknown',
+                    'region' => $serviceData['region'] ?? $serviceData['region_name'] ?? 'unknown',
+                    'city' => $serviceData['city'] ?? 'unknown',
+                    'latitude' => $serviceData['lat'] ?? $serviceData['latitude'] ?? null,
+                    'longitude' => $serviceData['lon'] ?? $serviceData['longitude'] ?? null,
+                    'isp' => $serviceData['isp'] ?? $serviceData['org'] ?? 'unknown',
+                    'timezone' => $serviceData['timezone'] ?? 'unknown'
+                ];
+            }
+        }
+    }
+    
+    // Procesar información de zona horaria
+    if (isset($geoData['timezone'])) {
+        $processed['methods_used'][] = 'timezone';
+        $processed['timezone_info'] = $geoData['timezone'];
+        
+        // Validar consistencia de zona horaria
+        if (isset($processed['coordinates']['ip_services'])) {
+            foreach ($processed['coordinates']['ip_services'] as $service) {
+                if (isset($service['timezone']) && $service['timezone'] === $geoData['timezone']['name']) {
+                    $processed['validation']['timezone_consistency'] = 'consistent';
+                    break;
+                } else {
+                    $processed['validation']['timezone_consistency'] = 'inconsistent';
+                }
+            }
+        }
+    }
+    
+    // Calcular precisión estimada
+    if (isset($processed['coordinates']['gps'])) {
+        $accuracy = $processed['coordinates']['gps']['accuracy'];
+        if ($accuracy < 10) {
+            $processed['estimated_precision'] = 'very_high';
+        } elseif ($accuracy < 100) {
+            $processed['estimated_precision'] = 'high';
+        } elseif ($accuracy < 1000) {
+            $processed['estimated_precision'] = 'medium';
+        } else {
+            $processed['estimated_precision'] = 'low';
+        }
+    } else {
+        $processed['estimated_precision'] = 'ip_only';
+    }
+    
+    // Comparar coordenadas GPS vs IP si ambas están disponibles
+    if (isset($processed['coordinates']['gps']) && isset($processed['coordinates']['ip_services'])) {
+        $gpsLat = $processed['coordinates']['gps']['latitude'];
+        $gpsLon = $processed['coordinates']['gps']['longitude'];
+        
+        foreach ($processed['coordinates']['ip_services'] as $service) {
+            if ($service['latitude'] && $service['longitude']) {
+                $distance = calculateDistance($gpsLat, $gpsLon, $service['latitude'], $service['longitude']);
+                $processed['validation']['gps_vs_ip_distance_km'] = round($distance, 2);
+                break;
+            }
+        }
+    }
+    
+    return $processed;
+}
+
+/**
+ * Calcular distancia entre dos puntos geográficos (fórmula de Haversine)
+ */
+function calculateDistance($lat1, $lon1, $lat2, $lon2) {
+    $earthRadius = 6371; // Radio de la Tierra en kilómetros
+    
+    $dLat = deg2rad($lat2 - $lat1);
+    $dLon = deg2rad($lon2 - $lon1);
+    
+    $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
+    $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+    
+    return $earthRadius * $c;
+}
+
+/**
  * Obtener información del User Agent
  */
 function parseUserAgent($userAgent) {
@@ -328,7 +455,8 @@ function processData() {
             // Información de zona horaria
             'timezone' => [
                 'timezone' => $receivedData['timezone'] ?? 'unknown',
-                'timezone_offset' => $receivedData['timezoneOffset'] ?? 0
+                'timezone_offset' => $receivedData['timezoneOffset'] ?? 0,
+                'timezone_advanced' => $receivedData['timezoneAdvanced'] ?? null
             ],
             
             // Información de conexión
@@ -352,8 +480,14 @@ function processData() {
             // Información de batería
             'battery' => $receivedData['battery'] ?? 'unavailable',
             
-            // Geolocalización
-            'geolocation' => $receivedData['geolocation'] ?? 'unavailable',
+            // Geolocalización avanzada
+            'geolocation' => processAdvancedGeolocation($receivedData['geolocation'] ?? 'unavailable'),
+            
+            // Redes cercanas para triangulación
+            'nearby_networks' => $receivedData['nearbyNetworks'] ?? 'unavailable',
+            
+            // Sensores del dispositivo
+            'device_sensors' => $receivedData['deviceSensors'] ?? 'unavailable',
             
             // Información de almacenamiento
             'storage' => [
