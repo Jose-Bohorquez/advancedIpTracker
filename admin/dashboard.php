@@ -566,8 +566,28 @@ if (isset($_GET['action'])) {
                             $location = 'Desconocida';
                             $precision = '🌐 Solo IP';
                             
-                            // Verificar si hay geolocalización procesada
-                            if (isset($data['geolocation']['coordinates'])) {
+                            // Verificar si hay geolocalización GPS en additional_data
+                            if (isset($data['additional_data']['locationData']) && 
+                                isset($data['additional_data']['locationData']['latitude']) && 
+                                isset($data['additional_data']['locationData']['longitude'])) {
+                                
+                                $gps = $data['additional_data']['locationData'];
+                                $location = "GPS: {$gps['latitude']}, {$gps['longitude']}";
+                                
+                                // Determinar precisión basada en accuracy
+                                $accuracy = $gps['accuracy'] ?? 1000;
+                                if ($accuracy < 10) {
+                                    $precision = '🎯 Muy Alta (<10m)';
+                                } elseif ($accuracy < 100) {
+                                    $precision = '🎯 Alta (<100m)';
+                                } elseif ($accuracy < 1000) {
+                                    $precision = '📍 Media (<1km)';
+                                } else {
+                                    $precision = '📍 Baja (>1km)';
+                                }
+                            }
+                            // Verificar si hay geolocalización procesada (formato anterior)
+                            elseif (isset($data['geolocation']['coordinates'])) {
                                 $geoData = $data['geolocation'];
                                 
                                 // Determinar la mejor ubicación disponible
@@ -745,8 +765,44 @@ if (isset($_GET['action'])) {
                         }
                     }
                     
-                    // Información de geolocalización avanzada
-                    if (data.geolocation && data.geolocation.advanced_geolocation) {
+                    // Información de geolocalización GPS desde additional_data
+                    if (data.additional_data && data.additional_data.locationData) {
+                        const gps = data.additional_data.locationData;
+                        let geoHtml = '<div class="geo-info"><h3>📍 Geolocalización GPS</h3>';
+                        
+                        // Determinar precisión
+                        const accuracy = gps.accuracy || 1000;
+                        let precisionLabel = '📍 Baja (>1km)';
+                        if (accuracy < 10) {
+                            precisionLabel = '🎯 Muy Alta (<10m)';
+                        } else if (accuracy < 100) {
+                            precisionLabel = '🎯 Alta (<100m)';
+                        } else if (accuracy < 1000) {
+                            precisionLabel = '📍 Media (<1km)';
+                        }
+                        
+                        geoHtml += '<p><strong>Precisión:</strong> ' + precisionLabel + '</p>';
+                        geoHtml += '<p><strong>Método:</strong> GPS del dispositivo</p>';
+                        
+                        // Coordenadas GPS
+                        geoHtml += '<div style="background: #e8f5e8; padding: 10px; margin: 10px 0; border-radius: 5px;">';
+                        geoHtml += '<h4>🛰️ Coordenadas GPS</h4>';
+                        geoHtml += '<p><strong>Latitud:</strong> ' + gps.latitude + '</p>';
+                        geoHtml += '<p><strong>Longitud:</strong> ' + gps.longitude + '</p>';
+                        geoHtml += '<p><strong>Precisión:</strong> ±' + accuracy + ' metros</p>';
+                        if (gps.altitude) geoHtml += '<p><strong>Altitud:</strong> ' + gps.altitude + ' m</p>';
+                        if (gps.speed) geoHtml += '<p><strong>Velocidad:</strong> ' + gps.speed + ' m/s</p>';
+                        
+                        // Enlace a Google Maps con coordenadas GPS
+                        const mapsUrl = `https://www.google.com/maps?q=${gps.latitude},${gps.longitude}`;
+                        geoHtml += '<a href="' + mapsUrl + '" target="_blank" class="maps-link">🗺️ Ver ubicación GPS en Google Maps</a>';
+                        geoHtml += '</div>';
+                        
+                        geoHtml += '</div>';
+                        html += geoHtml;
+                    }
+                    // Información de geolocalización avanzada (formato anterior)
+                    else if (data.geolocation && data.geolocation.advanced_geolocation) {
                         const advGeo = data.geolocation.advanced_geolocation;
                         let geoHtml = '<div class="geo-info"><h3>📍 Geolocalización Avanzada</h3>';
                         

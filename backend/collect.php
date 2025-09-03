@@ -134,7 +134,8 @@ function processAdvancedGeolocation($geoData, $allData = null) {
         $gpsData = $allData['locationData'];
     }
     
-    if (!is_array($geoData) && !$gpsData) {
+    // Si no hay datos GPS válidos, retornar unavailable
+    if (!$gpsData && (!is_array($geoData) || empty($geoData))) {
         return ['status' => 'unavailable', 'reason' => 'no_data'];
     }
     
