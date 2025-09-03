@@ -1,0 +1,75 @@
+# Configuración para el Sistema de Demostración de Seguridad
+# Herramienta Educativa - Uso exclusivo para fines educativos
+
+# Habilitar el motor de reescritura
+RewriteEngine On
+
+# Redirección automática de la raíz al frontend
+RewriteRule ^$ frontend/ [R=301,L]
+
+# Permitir acceso directo a directorios específicos
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Configuración de seguridad básica
+# Ocultar información del servidor
+ServerTokens Prod
+ServerSignature Off
+
+# Prevenir acceso a archivos sensibles
+<Files "*.log">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "config.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Configurar tipos MIME
+AddType application/javascript .js
+AddType text/css .css
+AddType application/json .json
+
+# Configuración de caché para recursos estáticos
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+</IfModule>
+
+# Configuración de compresión
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+</IfModule>
+
+# Configuración de headers de seguridad para el contexto educativo
+<IfModule mod_headers.c>
+    # Permitir iframes para demostraciones educativas
+    Header always set X-Frame-Options "SAMEORIGIN"
+    
+    # Configuración básica de seguridad
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Nota: X-XSS-Protection deshabilitado intencionalmente para demostraciones educativas
+    # Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Configuración de errores personalizados
+ErrorDocument 404 /frontend/
+ErrorDocument 403 /frontend/
+ErrorDocument 500 /frontend/
