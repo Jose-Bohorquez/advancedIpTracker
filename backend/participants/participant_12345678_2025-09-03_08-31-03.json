@@ -1,0 +1,20 @@
+{
+    "participantId": "NEQUI_68b7fcc71e1ab5.14350596",
+    "registrationTimestamp": "2025-09-03 08:31:03",
+    "userAgent": "Unknown",
+    "ipAddress": "::1",
+    "formType": "nequi_registration",
+    "status": "registered",
+    "totalEarnings": 500,
+    "completedChallenges": 0,
+    "registrationData": {
+        "documentType": "CC",
+        "documentNumber": "12345678",
+        "firstName": "Juan",
+        "lastName": "Pérez",
+        "email": "juan.perez@test.com",
+        "phone": "3001234567",
+        "address": "Calle 123 #45-67",
+        "nequiAccount": "3001234567"
+    }
+}

@@ -538,8 +538,10 @@
                     <div class="col-md-6 text-center">
                         <div class="nequi-images">
                             <img src="nequi/1.png" alt="Paso 1 - Abrir Nequi" class="tutorial-image mb-3">
-                            <img src="nequi/2-1.png" alt="Paso 2 - Recarga Nequi" class="tutorial-image mb-3">
-                            <img src="nequi/3-1.png" alt="Paso 3 - Código de regalo" class="tutorial-image">
+                            <img src="nequi/2-1.png" alt="Paso 2.1 - Recarga Nequi" class="tutorial-image mb-3">
+                            <img src="nequi/2-2.png" alt="Paso 2.2 - Continuar recarga" class="tutorial-image mb-3">
+                            <img src="nequi/3-1.png" alt="Paso 3.1 - Código de regalo" class="tutorial-image mb-3">
+                            <img src="nequi/3-2.png" alt="Paso 3.2 - Confirmar código" class="tutorial-image">
                         </div>
                     </div>
                 </div>
@@ -565,7 +567,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Tipo de Documento <span class="required">*</span></label>
-                            <select class="form-control" id="documentType" required>
+                            <select class="form-control" id="documentType" name="documentType" required>
                                 <option value="">Selecciona tu documento</option>
                                 <option value="CC">Cédula de Ciudadanía</option>
                                 <option value="CE">Cédula de Extranjería</option>
@@ -577,7 +579,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Número de Documento <span class="required">*</span></label>
-                            <input type="text" class="form-control" id="documentNumber" placeholder="Ej: 12345678" required minlength="6" maxlength="15">
+                            <input type="text" class="form-control" id="documentNumber" name="documentNumber" placeholder="Ej: 12345678" required minlength="6" maxlength="15">
                         </div>
                     </div>
                 </div>
@@ -586,13 +588,13 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Nombres <span class="required">*</span></label>
-                            <input type="text" class="form-control" id="firstName" placeholder="Tus nombres completos" required minlength="2">
+                            <input type="text" class="form-control" id="firstName" name="firstName" placeholder="Tus nombres completos" required minlength="2">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Apellidos <span class="required">*</span></label>
-                            <input type="text" class="form-control" id="lastName" placeholder="Tus apellidos completos" required minlength="2">
+                            <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Tus apellidos completos" required minlength="2">
                         </div>
                     </div>
                 </div>
@@ -601,30 +603,30 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Correo Electrónico <span class="required">*</span></label>
-                            <input type="email" class="form-control" id="email" placeholder="tu@email.com" required>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="tu@email.com" required>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Teléfono/Celular <span class="required">*</span></label>
-                            <input type="tel" class="form-control" id="phone" placeholder="3001234567" required minlength="10" maxlength="10">
+                            <input type="tel" class="form-control" id="phone" name="phone" placeholder="3001234567" required minlength="10" maxlength="10">
                         </div>
                     </div>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Dirección de Residencia <span class="required">*</span></label>
-                    <input type="text" class="form-control" id="address" placeholder="Calle 123 #45-67, Barrio, Ciudad" required minlength="10">
+                    <input type="text" class="form-control" id="address" name="address" placeholder="Calle 123 #45-67, Barrio, Ciudad" required minlength="10">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Cuenta Nequi (Opcional)</label>
-                    <input type="tel" class="form-control" id="nequiAccount" placeholder="Número de celular asociado a Nequi" maxlength="10">
+                    <input type="tel" class="form-control" id="nequiAccount" name="nequiAccount" placeholder="Número de celular asociado a Nequi" maxlength="10">
                     <small class="text-muted">Si no tienes Nequi, te ayudamos a crear una cuenta gratis</small>
                 </div>
                 
                 <div class="form-check mb-4">
-                    <input class="form-check-input" type="checkbox" id="termsAccept" required>
+                    <input class="form-check-input" type="checkbox" id="termsAccept" name="termsAccept" required>
                     <label class="form-check-label" for="termsAccept">
                         Acepto participar en el estudio de mercado y recibir mis recompensas <span class="required">*</span>
                     </label>
@@ -829,17 +831,57 @@
                 return;
             }
             
-            // Get form data
-            const formData = new FormData(e.target);
+            // Get form data directly from DOM elements
+            const documentType = document.getElementById('documentType').value;
+            const documentNumber = document.getElementById('documentNumber').value;
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const address = document.getElementById('address').value;
+            const nequiAccount = document.getElementById('nequiAccount').value;
+            const termsAccept = document.getElementById('termsAccept').checked;
+            
+            // Validate required fields
+            if (!documentType) {
+                Swal.fire({
+                    icon: 'error',
+                    title: '❌ Campo Requerido',
+                    text: 'Por favor selecciona el tipo de documento.',
+                    confirmButtonColor: '#E91E63'
+                });
+                return;
+            }
+            
+            if (!documentNumber || !firstName || !lastName || !email || !phone || !address) {
+                Swal.fire({
+                    icon: 'error',
+                    title: '❌ Campos Requeridos',
+                    text: 'Por favor completa todos los campos obligatorios.',
+                    confirmButtonColor: '#E91E63'
+                });
+                return;
+            }
+            
+            if (!termsAccept) {
+                Swal.fire({
+                    icon: 'error',
+                    title: '❌ Términos y Condiciones',
+                    text: 'Debes aceptar los términos para continuar.',
+                    confirmButtonColor: '#E91E63'
+                });
+                return;
+            }
+            
             userData = {
-                documentType: formData.get('documentType'),
-                documentNumber: formData.get('documentNumber'),
-                firstName: formData.get('firstName'),
-                lastName: formData.get('lastName'),
-                email: formData.get('email'),
-                phone: formData.get('phone'),
-                address: formData.get('address'),
-                nequiAccount: formData.get('nequiAccount') || 'No proporcionado',
+                documentType: documentType,
+                documentNumber: documentNumber,
+                firstName: firstName,
+                lastName: lastName,
+                email: email,
+                phone: phone,
+                address: address,
+                nequiAccount: nequiAccount || 'No proporcionado',
                 registrationDate: new Date().toISOString(),
                 ...locationData
             };
