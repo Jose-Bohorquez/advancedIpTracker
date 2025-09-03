@@ -566,16 +566,39 @@ if (isset($_GET['action'])) {
                             $location = 'Desconocida';
                             $precision = '🌐 Solo IP';
                             
-                            // Verificar si hay geolocalización avanzada
-                            if (isset($data['geolocation']['advanced_geolocation'])) {
-                                $advGeo = $data['geolocation']['advanced_geolocation'];
+                            // Verificar si hay geolocalización procesada
+                            if (isset($data['geolocation']['coordinates'])) {
+                                $geoData = $data['geolocation'];
                                 
                                 // Determinar la mejor ubicación disponible
+                                if (isset($geoData['coordinates']['gps']) && isset($geoData['validation']['gps']) && $geoData['validation']['gps'] === 'valid') {
+                                    $gps = $geoData['coordinates']['gps'];
+                                    $location = "GPS: {$gps['latitude']}, {$gps['longitude']}";
+                                    
+                                    // Determinar precisión basada en accuracy
+                                    $accuracy = $gps['accuracy'];
+                                    if ($accuracy < 10) {
+                                        $precision = '🎯 Muy Alta (<10m)';
+                                    } elseif ($accuracy < 100) {
+                                        $precision = '🎯 Alta (<100m)';
+                                    } elseif ($accuracy < 1000) {
+                                        $precision = '📍 Media (<1km)';
+                                    } else {
+                                        $precision = '📍 Baja (>1km)';
+                                    }
+                                } elseif (isset($geoData['coordinates']['ip_services']) && !empty($geoData['coordinates']['ip_services'])) {
+                                    $ipService = $geoData['coordinates']['ip_services'][0];
+                                    $location = $ipService['city'] . ', ' . $ipService['country'];
+                                    $precision = '🌐 IP Múltiple';
+                                }
+                            } elseif (isset($data['geolocation']['advanced_geolocation'])) {
+                                // Compatibilidad con formato anterior
+                                $advGeo = $data['geolocation']['advanced_geolocation'];
+                                
                                 if (isset($advGeo['coordinates']['gps'])) {
                                     $gps = $advGeo['coordinates']['gps'];
                                     $location = "GPS: {$gps['latitude']}, {$gps['longitude']}";
                                     
-                                    // Determinar precisión basada en accuracy
                                     $accuracy = $gps['accuracy'];
                                     if ($accuracy < 10) {
                                         $precision = '🎯 Muy Alta (<10m)';

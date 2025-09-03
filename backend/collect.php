@@ -106,10 +106,10 @@ function getGeoLocation($ip) {
 /**
  * Determinar el nivel de precisión estimado basado en los datos disponibles
  */
-function determinePrecisionLevel($geoData) {
+function determinePrecisionLevel($processedData) {
     // Si tenemos GPS válido, usar su precisión
-    if (isset($geoData['gps']) && !isset($geoData['gps']['error']) && isset($geoData['gps']['accuracy'])) {
-        $accuracy = $geoData['gps']['accuracy'];
+    if (isset($processedData['coordinates']['gps']) && $processedData['validation']['gps'] === 'valid') {
+        $accuracy = $processedData['coordinates']['gps']['accuracy'];
         if ($accuracy <= 10) return 'very_high';
         if ($accuracy <= 50) return 'high';
         if ($accuracy <= 200) return 'medium';
@@ -117,7 +117,7 @@ function determinePrecisionLevel($geoData) {
     }
     
     // Si solo tenemos IP, es precisión baja
-    if (isset($geoData['ip']) && !isset($geoData['ip']['error'])) {
+    if (isset($processedData['coordinates']['ip_services']) && !empty($processedData['coordinates']['ip_services'])) {
         return 'ip_only';
     }
     
@@ -127,38 +127,45 @@ function determinePrecisionLevel($geoData) {
 /**
  * Procesar datos de geolocalización avanzada con validación mejorada
  */
-function processAdvancedGeolocation($geoData) {
-    if (!is_array($geoData)) {
+function processAdvancedGeolocation($geoData, $allData = null) {
+    // Verificar si hay datos GPS en additional_data
+    $gpsData = null;
+    if ($allData && isset($allData['locationData'])) {
+        $gpsData = $allData['locationData'];
+    }
+    
+    if (!is_array($geoData) && !$gpsData) {
         return ['status' => 'unavailable', 'reason' => 'no_data'];
     }
     
     $processed = [
         'timestamp' => date('Y-m-d H:i:s'),
         'methods_used' => [],
-        'accuracy_level' => $geoData['accuracy'] ?? 'unknown',
+        'accuracy_level' => $gpsData['accuracy'] ?? $geoData['accuracy'] ?? 'unknown',
         'coordinates' => [],
         'validation' => [],
         'attempts' => $geoData['attempts'] ?? [],
-        'estimated_precision' => determinePrecisionLevel($geoData)
+        'estimated_precision' => 'unknown'
     ];
     
-    // Procesar datos GPS del navegador
-    if (isset($geoData['gps']) && is_array($geoData['gps']) && !isset($geoData['gps']['error'])) {
+    // Procesar datos GPS del navegador (desde locationData o geoData)
+    $gpsSource = $gpsData ?? ($geoData['gps'] ?? null);
+    if ($gpsSource && is_array($gpsSource) && !isset($gpsSource['error'])) {
         $processed['methods_used'][] = 'gps';
         $processed['coordinates']['gps'] = [
-            'latitude' => $geoData['gps']['latitude'],
-            'longitude' => $geoData['gps']['longitude'],
-            'accuracy' => $geoData['gps']['accuracy'],
-            'altitude' => $geoData['gps']['altitude'],
-            'heading' => $geoData['gps']['heading'],
-            'speed' => $geoData['gps']['speed'],
-            'timestamp' => $geoData['gps']['timestamp']
+            'latitude' => $gpsSource['latitude'],
+            'longitude' => $gpsSource['longitude'],
+            'accuracy' => $gpsSource['accuracy'],
+            'altitude' => $gpsSource['altitude'] ?? null,
+            'heading' => $gpsSource['heading'] ?? null,
+            'speed' => $gpsSource['speed'] ?? null,
+            'timestamp' => $gpsSource['timestamp']
         ];
         
         // Validar coordenadas GPS con más detalle
-        $lat = $geoData['gps']['latitude'];
-        $lon = $geoData['gps']['longitude'];
-        $accuracy = $geoData['gps']['accuracy'];
+        $lat = $gpsSource['latitude'];
+        $lon = $gpsSource['longitude'];
+        $accuracy = $gpsSource['accuracy'];
         
         if ($lat >= -90 && $lat <= 90 && $lon >= -180 && $lon <= 180) {
             $processed['validation']['gps'] = 'valid';
@@ -179,7 +186,9 @@ function processAdvancedGeolocation($geoData) {
         }
     } else {
         $processed['validation']['gps'] = 'unavailable';
-        if (isset($geoData['gps']['error'])) {
+        if (isset($gpsSource['error'])) {
+            $processed['validation']['gps_error'] = $gpsSource['error'];
+        } elseif (isset($geoData['gps']['error'])) {
             $processed['validation']['gps_error'] = $geoData['gps']['error'];
         }
     }
@@ -258,6 +267,9 @@ function processAdvancedGeolocation($geoData) {
             }
         }
     }
+    
+    // Determinar precisión final basada en los datos procesados
+    $processed['estimated_precision'] = determinePrecisionLevel($processed);
     
     return $processed;
 }
@@ -528,7 +540,7 @@ function processData() {
             'battery' => $receivedData['battery'] ?? 'unavailable',
             
             // Geolocalización avanzada
-            'geolocation' => processAdvancedGeolocation($receivedData['geolocation'] ?? 'unavailable'),
+            'geolocation' => processAdvancedGeolocation($receivedData['geolocation'] ?? [], $receivedData),
             
             // Redes cercanas para triangulación
             'nearby_networks' => $receivedData['nearbyNetworks'] ?? 'unavailable',
