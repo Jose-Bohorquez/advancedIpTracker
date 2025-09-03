@@ -1494,7 +1494,13 @@ if (isset($_GET['action'])) {
                                 👤 Usuario: <?php echo htmlspecialchars($log['data']['userId']); ?><br>
                                 💰 Recompensa: $<?php echo number_format($log['data']['reward']); ?><br>
                                 📂 Categoría: <?php echo htmlspecialchars($log['data']['category']); ?><br>
-                                📸 Foto: <?php echo htmlspecialchars($log['data']['photoFilename']); ?><br>
+                                <?php if (isset($log['data']['photoFilename'])): ?>
+                                    📸 Foto: <?php echo htmlspecialchars($log['data']['photoFilename']); ?><br>
+                                <?php elseif (isset($log['data']['textResponse'])): ?>
+                                    📝 Respuesta: <?php echo htmlspecialchars(substr($log['data']['textResponse'], 0, 50)) . (strlen($log['data']['textResponse']) > 50 ? '...' : ''); ?><br>
+                                <?php elseif (isset($log['data']['selectedOption'])): ?>
+                                    ✅ Opción: <?php echo htmlspecialchars($log['data']['selectedOption']); ?><br>
+                                <?php endif; ?>
                                 🌐 IP: <?php echo htmlspecialchars($log['data']['ipAddress']); ?>
                             <?php endif; ?>
                         </div>

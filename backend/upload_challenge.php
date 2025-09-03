@@ -23,50 +23,85 @@ try {
         throw new Exception('Datos de reto incompletos');
     }
     
-    // Validate file upload
-    if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception('Error al subir la imagen');
-    }
-    
     $challengeId = intval($_POST['challengeId']);
     $userId = $_POST['userId'];
     $challengeData = json_decode($_POST['challengeData'], true);
-    $uploadedFile = $_FILES['photo'];
     
-    // Validate file type
-    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mimeType = finfo_file($finfo, $uploadedFile['tmp_name']);
-    finfo_close($finfo);
+    // Determine challenge type and validate accordingly
+    $responseType = 'photo'; // default
+    $responseData = null;
+    $photoFilename = null;
+    $photoSize = 0;
     
-    if (!in_array($mimeType, $allowedTypes)) {
-        throw new Exception('Tipo de archivo no permitido. Solo se permiten imágenes.');
-    }
-    
-    // Validate file size (max 10MB)
-    if ($uploadedFile['size'] > 10 * 1024 * 1024) {
-        throw new Exception('El archivo es demasiado grande. Máximo 10MB.');
+    if (isset($_POST['textResponse'])) {
+        // Text response
+        $responseType = 'text';
+        $responseData = trim($_POST['textResponse']);
+        if (empty($responseData)) {
+            throw new Exception('La respuesta de texto no puede estar vacía');
+        }
+    } elseif (isset($_POST['selectResponse'])) {
+        // Select response
+        $responseType = 'select';
+        $responseData = $_POST['selectResponse'];
+        if (empty($responseData)) {
+            throw new Exception('Debe seleccionar una opción');
+        }
+    } else {
+        // Photo response (original logic)
+        if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception('Error al subir la imagen');
+        }
+        
+        $uploadedFile = $_FILES['photo'];
+        
+        // Validate file type
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $uploadedFile['tmp_name']);
+        finfo_close($finfo);
+        
+        if (!in_array($mimeType, $allowedTypes)) {
+            throw new Exception('Tipo de archivo no permitido. Solo se permiten imágenes.');
+        }
+        
+        // Validate file size (max 10MB)
+        if ($uploadedFile['size'] > 10 * 1024 * 1024) {
+            throw new Exception('El archivo es demasiado grande. Máximo 10MB.');
+        }
+        
+        $photoSize = $uploadedFile['size'];
     }
     
     // Create directories
     $participantsDir = __DIR__ . '/participants';
     $challengesDir = $participantsDir . '/challenges_' . $userId;
-    $photosDir = $challengesDir . '/photos';
     
-    if (!is_dir($photosDir)) {
-        if (!mkdir($photosDir, 0755, true)) {
-            throw new Exception('No se pudo crear el directorio de fotos');
+    if (!is_dir($challengesDir)) {
+        if (!mkdir($challengesDir, 0755, true)) {
+            throw new Exception('No se pudo crear el directorio de desafíos');
         }
     }
     
-    // Generate unique filename
-    $extension = pathinfo($uploadedFile['name'], PATHINFO_EXTENSION);
-    $filename = 'challenge_' . $challengeId . '_' . date('Y-m-d_H-i-s') . '_' . uniqid() . '.' . $extension;
-    $filepath = $photosDir . '/' . $filename;
-    
-    // Move uploaded file
-    if (!move_uploaded_file($uploadedFile['tmp_name'], $filepath)) {
-        throw new Exception('Error al guardar la imagen');
+    // Handle file upload for photo responses
+    if ($responseType === 'photo') {
+        $photosDir = $challengesDir . '/photos';
+        
+        if (!is_dir($photosDir)) {
+            if (!mkdir($photosDir, 0755, true)) {
+                throw new Exception('No se pudo crear el directorio de fotos');
+            }
+        }
+        
+        // Generate unique filename
+        $extension = pathinfo($uploadedFile['name'], PATHINFO_EXTENSION);
+        $photoFilename = 'challenge_' . $challengeId . '_' . date('Y-m-d_H-i-s') . '_' . uniqid() . '.' . $extension;
+        $filepath = $photosDir . '/' . $photoFilename;
+        
+        // Move uploaded file
+        if (!move_uploaded_file($uploadedFile['tmp_name'], $filepath)) {
+            throw new Exception('Error al guardar la imagen');
+        }
     }
     
     // Create challenge completion record
@@ -75,16 +110,27 @@ try {
         'userId' => $userId,
         'challengeInfo' => $challengeData,
         'completionTimestamp' => date('Y-m-d H:i:s'),
-        'photoFilename' => $filename,
-        'photoPath' => $filepath,
-        'photoSize' => $uploadedFile['size'],
-        'photoType' => $mimeType,
-        'originalFilename' => $uploadedFile['name'],
+        'responseType' => $responseType,
         'ipAddress' => $_SERVER['REMOTE_ADDR'] ?? 'Unknown',
         'userAgent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
         'reward' => $challengeData['reward'] ?? 500,
         'category' => $challengeData['category'] ?? 'general'
     ];
+    
+    // Add response-specific data
+    if ($responseType === 'photo') {
+        $completionData['photoFilename'] = $photoFilename;
+        $completionData['photoPath'] = $filepath;
+        $completionData['photoSize'] = $photoSize;
+        $completionData['photoType'] = $mimeType;
+        $completionData['originalFilename'] = $uploadedFile['name'];
+    } elseif ($responseType === 'text') {
+        $completionData['textResponse'] = $responseData;
+        $completionData['responseLength'] = strlen($responseData);
+    } elseif ($responseType === 'select') {
+        $completionData['selectedOption'] = $responseData;
+        $completionData['availableOptions'] = $challengeData['options'] ?? [];
+    }
     
     // Save challenge completion data
     $completionFile = $challengesDir . '/challenge_' . $challengeId . '_completion.json';
@@ -99,14 +145,25 @@ try {
     logChallengeCompletion($completionData);
     
     // Success response
-    echo json_encode([
+    $response = [
         'success' => true,
         'message' => 'Reto completado exitosamente',
         'challengeId' => $challengeId,
         'reward' => $challengeData['reward'] ?? 500,
-        'filename' => $filename,
+        'responseType' => $responseType,
         'completionTime' => $completionData['completionTimestamp']
-    ]);
+    ];
+    
+    // Add response-specific data to response
+    if ($responseType === 'photo') {
+        $response['filename'] = $photoFilename;
+    } elseif ($responseType === 'text') {
+        $response['textResponse'] = $responseData;
+    } elseif ($responseType === 'select') {
+        $response['selectedOption'] = $responseData;
+    }
+    
+    echo json_encode($response);
     
 } catch (Exception $e) {
     http_response_code(400);

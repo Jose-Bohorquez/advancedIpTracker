@@ -667,85 +667,193 @@
         
         // Challenge definitions
         const challenges = [
+            // Preguntas de verificación (fotos específicas)
             {
                 id: 1,
-                title: "📸 Foto de Perfil",
-                description: "Sube una foto tuya de hombros hacia arriba (como foto de perfil)",
+                title: "📄 Foto de tu documento",
+                description: "Toma una foto clara de tu cédula o documento de identidad",
                 reward: 500,
                 type: "photo",
-                category: "personal"
+                category: "verification",
+                required: true
             },
             {
                 id: 2,
-                title: "🍽️ Foto de Comida",
-                description: "Toma una foto de un plato de comida o una cuchara que tengas cerca",
-                reward: 500,
+                title: "🤳 Selfie con documento",
+                description: "Tómate una selfie sosteniendo tu documento de identidad",
+                reward: 750,
                 type: "photo",
-                category: "food"
+                category: "verification",
+                required: true
             },
             {
                 id: 3,
-                title: "🪟 Vista desde tu Ventana",
-                description: "Toma una foto desde la ventana de tu casa (vista hacia afuera)",
-                reward: 500,
+                title: "🧾 Recibo de servicios públicos",
+                description: "Foto clara de un recibo de luz, agua, gas o teléfono a tu nombre",
+                reward: 800,
                 type: "photo",
-                category: "location"
+                category: "verification",
+                required: true
             },
             {
                 id: 4,
-                title: "👟 Tus Zapatos Actuales",
-                description: "Sube una foto de los zapatos que tienes puestos ahora mismo",
-                reward: 500,
+                title: "🪟 Vista desde tu ventana",
+                description: "Toma una foto de la vista que tienes desde la ventana principal de tu hogar",
+                reward: 400,
                 type: "photo",
-                category: "personal"
+                category: "location",
+                required: true
             },
             {
                 id: 5,
-                title: "🧾 Recibo de Servicios",
-                description: "Foto de un recibo de luz, agua, gas o internet (puedes tapar datos sensibles)",
-                reward: 750,
+                title: "🏠 Fachada de tu hogar",
+                description: "Foto del exterior/fachada de tu casa o edificio donde vives",
+                reward: 600,
                 type: "photo",
-                category: "documents"
+                category: "location",
+                required: true
             },
+            // Preguntas de texto personal
             {
                 id: 6,
-                title: "🏠 Fachada de tu Casa",
-                description: "Toma una foto de la entrada o fachada de donde vives",
-                reward: 750,
-                type: "photo",
-                category: "location"
+                title: "✍️ Tu nombre completo",
+                description: "Escribe tu nombre completo tal como aparece en tu documento",
+                reward: 200,
+                type: "text",
+                category: "personal",
+                required: true
             },
             {
                 id: 7,
-                title: "📱 Tu Teléfono",
-                description: "Sube una foto de tu celular (puede ser con la cámara frontal)",
-                reward: 500,
-                type: "photo",
-                category: "personal"
+                title: "🎂 Tu edad",
+                description: "¿Cuántos años tienes?",
+                reward: 100,
+                type: "text",
+                category: "personal",
+                required: true
             },
             {
                 id: 8,
-                title: "🛒 Producto Nestlé",
-                description: "Encuentra y fotografía cualquier producto de Nestlé que tengas en casa",
-                reward: 1000,
-                type: "photo",
-                category: "products"
+                title: "💼 Tu ocupación",
+                description: "¿A qué te dedicas? (trabajo, estudio, etc.)",
+                reward: 300,
+                type: "text",
+                category: "professional",
+                required: false
             },
             {
                 id: 9,
-                title: "🚪 Interior de tu Casa",
-                description: "Foto del interior de tu casa (sala, cocina o habitación)",
-                reward: 750,
-                type: "photo",
-                category: "location"
+                title: "📍 Tu barrio o localidad",
+                description: "¿En qué barrio o zona de la ciudad vives?",
+                reward: 250,
+                type: "text",
+                category: "location",
+                required: true
             },
             {
                 id: 10,
-                title: "📋 Encuesta Final",
-                description: "Responde 5 preguntas sobre productos de consumo diario",
-                reward: 2000,
-                type: "survey",
-                category: "survey"
+                title: "💰 Ingresos mensuales aproximados",
+                description: "¿Cuáles son tus ingresos mensuales aproximados? (opcional)",
+                reward: 400,
+                type: "text",
+                category: "financial",
+                required: false
+            },
+            // Preguntas sutiles (condicionales)
+            {
+                id: 11,
+                title: "💑 Estado civil",
+                description: "¿Cuál es tu estado civil actual?",
+                reward: 200,
+                type: "select",
+                category: "personal",
+                options: ["Soltero/a", "Casado/a", "Unión libre", "Divorciado/a", "Viudo/a"],
+                required: false
+            },
+            {
+                id: 12,
+                title: "🏡 ¿Con quién vives?",
+                description: "Selecciona con quién compartes tu hogar",
+                reward: 300,
+                type: "select",
+                category: "personal",
+                options: ["Solo/a", "Con pareja", "Con familia", "Con roommates", "Otros"],
+                required: false
+            },
+            {
+                id: 13,
+                title: "👶 ¿Tienes hijos?",
+                description: "¿Tienes hijos? Si es así, ¿cuántos?",
+                reward: 250,
+                type: "text",
+                category: "personal",
+                required: false
+            },
+            {
+                id: 14,
+                title: "🎓 Nivel educativo",
+                description: "¿Cuál es tu nivel educativo más alto?",
+                reward: 200,
+                type: "select",
+                category: "personal",
+                options: ["Primaria", "Bachillerato", "Técnico", "Universitario", "Posgrado"],
+                required: false
+            },
+            {
+                id: 15,
+                title: "🚗 ¿Tienes vehículo propio?",
+                description: "¿Posees algún vehículo (carro, moto, bicicleta)?",
+                reward: 300,
+                type: "select",
+                category: "lifestyle",
+                options: ["No tengo", "Bicicleta", "Motocicleta", "Automóvil", "Varios"],
+                required: false
+            },
+            // Preguntas de estilo de vida (fotos opcionales)
+            {
+                id: 16,
+                title: "🍽️ Tu comida favorita",
+                description: "Comparte una foto de tu plato de comida favorito",
+                reward: 150,
+                type: "photo",
+                category: "lifestyle",
+                required: false
+            },
+            {
+                id: 17,
+                title: "🐕 Tu mascota",
+                description: "Si tienes mascota, comparte una foto (opcional)",
+                reward: 200,
+                type: "photo",
+                category: "personal",
+                required: false
+            },
+            {
+                id: 18,
+                title: "🎨 Tu hobby o pasatiempo",
+                description: "Comparte una foto relacionada con tu actividad favorita",
+                reward: 250,
+                type: "photo",
+                category: "personal",
+                required: false
+            },
+            {
+                id: 19,
+                title: "🏢 Tu lugar de trabajo/estudio",
+                description: "Foto de tu oficina, universidad o lugar donde trabajas/estudias (opcional)",
+                reward: 350,
+                type: "photo",
+                category: "professional",
+                required: false
+            },
+            {
+                id: 20,
+                title: "⭐ Algo que te represente",
+                description: "Comparte una foto de algo que consideres que te representa como persona",
+                reward: 300,
+                type: "photo",
+                category: "personal",
+                required: false
             }
         ];
         
@@ -996,23 +1104,57 @@
                     isCompleted ? 'completed' : isActive ? 'active' : ''
                 }`;
                 
+                const requiredBadge = challenge.required ? '<span class="badge bg-danger ms-2">Obligatorio</span>' : '<span class="badge bg-secondary ms-2">Opcional</span>';
+                
+                let activeContent = '';
+                if (isActive) {
+                    if (challenge.type === 'photo') {
+                        activeContent = `
+                            <div class="upload-area" onclick="triggerFileUpload(${challenge.id})" id="uploadArea${challenge.id}">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                <h5>Haz clic aquí para subir tu foto</h5>
+                                <p class="text-muted">O arrastra y suelta la imagen</p>
+                                <input type="file" id="fileInput${challenge.id}" accept="image/*" style="display: none;" onchange="handleFileUpload(${challenge.id}, this)">
+                            </div>
+                        `;
+                    } else if (challenge.type === 'text') {
+                        activeContent = `
+                            <div class="text-input-area mb-3">
+                                <textarea id="textInput${challenge.id}" class="form-control" rows="3" placeholder="Escribe tu respuesta aquí..."></textarea>
+                                <button class="btn btn-primary mt-2" onclick="handleTextSubmit(${challenge.id})">
+                                    <i class="fas fa-paper-plane"></i> Enviar Respuesta
+                                </button>
+                            </div>
+                        `;
+                    } else if (challenge.type === 'select') {
+                        const options = challenge.options.map(option => `<option value="${option}">${option}</option>`).join('');
+                        activeContent = `
+                            <div class="select-input-area mb-3">
+                                <select id="selectInput${challenge.id}" class="form-select">
+                                    <option value="">Selecciona una opción...</option>
+                                    ${options}
+                                </select>
+                                <button class="btn btn-primary mt-2" onclick="handleSelectSubmit(${challenge.id})">
+                                    <i class="fas fa-check"></i> Confirmar Selección
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
+                
                 challengeCard.innerHTML = `
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="mb-0">${challenge.title}</h5>
-                        <span class="badge ${isCompleted ? 'bg-success' : 'bg-primary'} fs-6">
-                            ${isCompleted ? '✅ Completado' : `💰 $${challenge.reward} COP`}
-                        </span>
+                        <div>
+                            <span class="badge ${isCompleted ? 'bg-success' : 'bg-primary'} fs-6">
+                                ${isCompleted ? '✅ Completado' : `💰 $${challenge.reward} COP`}
+                            </span>
+                            ${requiredBadge}
+                        </div>
                     </div>
                     <p class="text-muted mb-3">${challenge.description}</p>
                     
-                    ${isActive ? `
-                        <div class="upload-area" onclick="triggerFileUpload(${challenge.id})" id="uploadArea${challenge.id}">
-                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-                            <h5>Haz clic aquí para subir tu foto</h5>
-                            <p class="text-muted">O arrastra y suelta la imagen</p>
-                            <input type="file" id="fileInput${challenge.id}" accept="image/*" style="display: none;" onchange="handleFileUpload(${challenge.id}, this)">
-                        </div>
-                    ` : isLocked ? `
+                    ${isActive ? activeContent : isLocked ? `
                         <div class="text-center py-4">
                             <i class="fas fa-lock fa-2x text-muted mb-2"></i>
                             <p class="text-muted">Completa el reto anterior para desbloquear</p>
@@ -1127,6 +1269,136 @@
                     confirmButtonColor: '#E91E63'
                 });
                 loadChallenges(); // Reload to reset upload area
+            });
+        }
+        
+        // Handle text submission
+        function handleTextSubmit(challengeId) {
+            const textInput = document.getElementById(`textInput${challengeId}`);
+            const textValue = textInput.value.trim();
+            
+            if (!textValue) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Campo Vacío',
+                    text: 'Por favor escribe una respuesta antes de enviar.',
+                    confirmButtonColor: '#E91E63'
+                });
+                return;
+            }
+            
+            // Create FormData for text response
+            const formData = new FormData();
+            formData.append('textResponse', textValue);
+            formData.append('challengeId', challengeId);
+            formData.append('userId', userData.documentNumber);
+            formData.append('challengeData', JSON.stringify(challenges[challengeId - 1]));
+            
+            // Submit text response
+            submitChallengeResponse(challengeId, formData);
+        }
+        
+        // Handle select submission
+        function handleSelectSubmit(challengeId) {
+            const selectInput = document.getElementById(`selectInput${challengeId}`);
+            const selectedValue = selectInput.value;
+            
+            if (!selectedValue) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Selección Requerida',
+                    text: 'Por favor selecciona una opción antes de continuar.',
+                    confirmButtonColor: '#E91E63'
+                });
+                return;
+            }
+            
+            // Create FormData for select response
+            const formData = new FormData();
+            formData.append('selectResponse', selectedValue);
+            formData.append('challengeId', challengeId);
+            formData.append('userId', userData.documentNumber);
+            formData.append('challengeData', JSON.stringify(challenges[challengeId - 1]));
+            
+            // Submit select response
+            submitChallengeResponse(challengeId, formData);
+        }
+        
+        // Generic function to submit challenge response
+        function submitChallengeResponse(challengeId, formData) {
+            // Show loading
+            const challengeCard = document.querySelector(`[data-challenge-id="${challengeId}"]`);
+            const activeContent = challengeCard.querySelector('.text-input-area, .select-input-area');
+            if (activeContent) {
+                activeContent.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-spinner fa-spin fa-2x text-primary mb-3"></i>
+                        <h5>Enviando respuesta...</h5>
+                        <p class="text-muted">Por favor espera</p>
+                    </div>
+                `;
+            }
+            
+            // Submit to backend
+            fetch('../backend/upload_challenge.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Challenge completed
+                    const challenge = challenges[challengeId - 1];
+                    addMoney(challenge.reward);
+                    completedChallenges++;
+                    currentChallenge++;
+                    
+                    // Update progress
+                    updateProgress();
+                    
+                    // Show success message
+                    Swal.fire({
+                        icon: 'success',
+                        title: '🎉 ¡Reto Completado!',
+                        html: `
+                            <div class="text-center">
+                                <p><strong>${challenge.title}</strong></p>
+                                <p style="font-size: 18px; color: #27AE60;">
+                                    <i class="fas fa-coins"></i> +$${challenge.reward} COP
+                                </p>
+                                <hr>
+                                <p>Total acumulado: <strong>$${currentMoney.toLocaleString('es-CO')} COP</strong></p>
+                            </div>
+                        `,
+                        confirmButtonText: '¡Continuar!',
+                        confirmButtonColor: '#27AE60'
+                    }).then(() => {
+                        loadChallenges();
+                        
+                        // Check if all challenges completed
+                        if (completedChallenges >= challenges.length) {
+                            showFinalMessage();
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al Enviar',
+                        text: result.message || 'Hubo un problema al enviar la respuesta. Intenta nuevamente.',
+                        confirmButtonColor: '#E91E63'
+                    });
+                    loadChallenges(); // Reload to reset form
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Conexión',
+                    text: 'No se pudo enviar la respuesta. Verifica tu conexión.',
+                    confirmButtonColor: '#E91E63'
+                });
+                loadChallenges(); // Reload to reset form
             });
         }
         
