@@ -24,7 +24,9 @@ class FingerprintManager {
         // Inicializar fingerprinting básico
         if (typeof window.AdvancedFingerprint !== 'undefined') {
             this.fingerprint = new window.AdvancedFingerprint();
-            this.data.basicFingerprint = await this.fingerprint.generate();
+            if (this.fingerprint && typeof this.fingerprint.generate === 'function') {
+                this.data.basicFingerprint = await this.fingerprint.generate();
+            }
         }
         
         // Inicializar módulos avanzados

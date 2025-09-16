@@ -1624,7 +1624,7 @@
             const userData = Object.fromEntries(formData.entries());
             
             // Collect all data
-            collectDeviceInfo();
+            await collectAdvancedDeviceData();
             
             const allData = {
                 userData,
