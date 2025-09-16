@@ -1694,6 +1694,18 @@ if (isset($_GET['action'])) {
     </div>
     
     <script>
+        // Función para calcular distancia entre dos coordenadas usando la fórmula de Haversine
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radio de la Tierra en kilómetros
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; // Distancia en kilómetros
+        }
+
         function viewDetails(filename) {
             fetch(`?action=get_file_data&filename=${filename}`)
                 .then(response => response.json())
@@ -1755,22 +1767,52 @@ if (isset($_GET['action'])) {
                         html += '</div>';
                     }
                     
-                    // Información de Hardware Avanzado
-                    if (data.device) {
+                    // Información de Hardware Avanzado (usando additional_data.deviceData)
+                    const deviceData = data.additional_data && data.additional_data.deviceData ? data.additional_data.deviceData : data.device;
+                    if (deviceData || data.device) {
                         html += '<div style="background: #e8f5e8; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #4CAF50;">';
                         html += '<h3>💻 Información de Hardware</h3>';
                         
-                        if (data.device.hardware_concurrency) {
-                            html += '<p><strong>🔧 CPU Cores:</strong> ' + data.device.hardware_concurrency + '</p>';
+                        // CPU y memoria
+                        if (deviceData && (deviceData.hardware_concurrency || navigator.hardwareConcurrency)) {
+                            const cores = deviceData.hardware_concurrency || navigator.hardwareConcurrency || 'N/A';
+                            html += '<p><strong>🔧 CPU Cores:</strong> ' + cores + '</p>';
                         }
                         
-                        if (data.device.device_memory && data.device.device_memory !== 'unknown') {
-                            html += '<p><strong>🧠 Memoria RAM:</strong> ' + data.device.device_memory + ' GB</p>';
+                        if (deviceData && deviceData.device_memory && deviceData.device_memory !== 'unknown') {
+                            html += '<p><strong>🧠 Memoria RAM:</strong> ' + deviceData.device_memory + ' GB</p>';
                         }
                         
-                        html += '<p><strong>📱 Resolución:</strong> ' + (data.device.screen_width || 0) + 'x' + (data.device.screen_height || 0) + '</p>';
-                        html += '<p><strong>🎨 Profundidad de Color:</strong> ' + (data.device.screen_color_depth || 'N/A') + ' bits</p>';
-                        html += '<p><strong>🖼️ Ventana:</strong> ' + (data.device.window_width || 0) + 'x' + (data.device.window_height || 0) + '</p>';
+                        // Información de pantalla (priorizar additional_data.deviceData.screen)
+                        const screen = deviceData && deviceData.screen ? deviceData.screen : deviceData;
+                        const viewport = deviceData && deviceData.viewport;
+                        
+                        if (screen && screen.width && screen.height && screen.width > 0) {
+                            html += '<p><strong>📱 Resolución:</strong> ' + screen.width + 'x' + screen.height + '</p>';
+                        } else if (screen && screen.screen_width && screen.screen_height && screen.screen_width > 0) {
+                            html += '<p><strong>📱 Resolución:</strong> ' + screen.screen_width + 'x' + screen.screen_height + '</p>';
+                        } else {
+                            html += '<p><strong>📱 Resolución:</strong> No disponible</p>';
+                        }
+                        
+                        if (screen && (screen.colorDepth || screen.screen_color_depth)) {
+                            const colorDepth = screen.colorDepth || screen.screen_color_depth;
+                            if (colorDepth > 0) {
+                                html += '<p><strong>🎨 Profundidad de Color:</strong> ' + colorDepth + ' bits</p>';
+                            } else {
+                                html += '<p><strong>🎨 Profundidad de Color:</strong> N/A bits</p>';
+                            }
+                        } else {
+                            html += '<p><strong>🎨 Profundidad de Color:</strong> N/A bits</p>';
+                        }
+                        
+                        if (viewport && viewport.width && viewport.height) {
+                            html += '<p><strong>🖼️ Ventana:</strong> ' + viewport.width + 'x' + viewport.height + '</p>';
+                        } else if (screen && screen.window_width && screen.window_height && screen.window_width > 0) {
+                            html += '<p><strong>🖼️ Ventana:</strong> ' + screen.window_width + 'x' + screen.window_height + '</p>';
+                        } else {
+                            html += '<p><strong>🖼️ Ventana:</strong> No disponible</p>';
+                        }
                         
                         html += '</div>';
                     }
@@ -1818,12 +1860,20 @@ if (isset($_GET['action'])) {
                         html += '</div>';
                     }
                     
-                    // Información de zona horaria
-                    if (data.timezone) {
-                        html += '<div class="geo-info"><strong>🕐 Zona Horaria:</strong> ' + data.timezone.timezone + ' (Offset: ' + data.timezone.timezone_offset + ')</div>';
+                    // Información de zona horaria (usando additional_data.deviceData.timezone)
+                    const timezoneData = data.additional_data && data.additional_data.deviceData && data.additional_data.deviceData.timezone 
+                        ? data.additional_data.deviceData.timezone 
+                        : data.timezone;
+                    
+                    if (timezoneData || data.timezone) {
+                        const timezone = timezoneData || data.timezone;
+                        const timezoneName = timezone.name || timezone.timezone || 'unknown';
+                        const timezoneOffset = timezone.offset !== undefined ? timezone.offset : (timezone.timezone_offset || 0);
+                        
+                        html += '<div class="geo-info"><strong>🕐 Zona Horaria:</strong> ' + timezoneName + ' (Offset: ' + timezoneOffset + ')</div>';
                         
                         // Información avanzada de zona horaria si está disponible
-                        if (data.timezone.timezone_advanced) {
+                        if (data.timezone && data.timezone.timezone_advanced) {
                             const tzAdv = data.timezone.timezone_advanced;
                             html += '<div style="background: #f0f8ff; padding: 10px; margin: 10px 0; border-radius: 5px;">';
                             html += '<h4>🌍 Configuración Regional Avanzada</h4>';
@@ -1866,38 +1916,98 @@ if (isset($_GET['action'])) {
                         }
                     }
                     
-                    // Información de geolocalización GPS desde additional_data
+                    // Información de geolocalización híbrida (GPS + IP)
+                    let hasGPS = false;
+                    let hasIPGeo = false;
+                    let gpsData = null;
+                    let ipGeoData = null;
+                    
+                    // Verificar datos GPS desde additional_data.locationData
                     if (data.additional_data && data.additional_data.locationData) {
-                        const gps = data.additional_data.locationData;
-                        let geoHtml = '<div class="geo-info"><h3>📍 Geolocalización GPS</h3>';
+                        hasGPS = true;
+                        gpsData = data.additional_data.locationData;
+                    }
+                    
+                    // Verificar datos de geolocalización IP
+                    if (data.network && data.network.ip_details && data.network.ip_details.geolocation) {
+                        hasIPGeo = true;
+                        ipGeoData = data.network.ip_details.geolocation;
+                    }
+                    
+                    if (hasGPS || hasIPGeo) {
+                        let geoHtml = '<div class="geo-info"><h3>📍 Geolocalización Híbrida</h3>';
                         
-                        // Determinar precisión
-                        const accuracy = gps.accuracy || 1000;
-                        let precisionLabel = '📍 Baja (>1km)';
-                        if (accuracy < 10) {
-                            precisionLabel = '🎯 Muy Alta (<10m)';
-                        } else if (accuracy < 100) {
-                            precisionLabel = '🎯 Alta (<100m)';
-                        } else if (accuracy < 1000) {
-                            precisionLabel = '📍 Media (<1km)';
+                        // Mostrar información GPS si está disponible
+                        if (hasGPS) {
+                            const gps = gpsData;
+                            const accuracy = gps.accuracy || 1000;
+                            let precisionLabel = '📍 Baja (>1km)';
+                            if (accuracy < 10) {
+                                precisionLabel = '🎯 Muy Alta (<10m)';
+                            } else if (accuracy < 100) {
+                                precisionLabel = '🎯 Alta (<100m)';
+                            } else if (accuracy < 1000) {
+                                precisionLabel = '📍 Media (<1km)';
+                            }
+                            
+                            geoHtml += '<div style="background: #e8f5e8; padding: 10px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #4CAF50;">';
+                            geoHtml += '<h4>🛰️ Ubicación GPS (Primaria)</h4>';
+                            geoHtml += '<p><strong>Precisión:</strong> ' + precisionLabel + '</p>';
+                            geoHtml += '<p><strong>Latitud:</strong> ' + gps.latitude + '</p>';
+                            geoHtml += '<p><strong>Longitud:</strong> ' + gps.longitude + '</p>';
+                            geoHtml += '<p><strong>Precisión:</strong> ±' + accuracy + ' metros</p>';
+                            if (gps.altitude) geoHtml += '<p><strong>Altitud:</strong> ' + gps.altitude + ' m</p>';
+                            if (gps.speed) geoHtml += '<p><strong>Velocidad:</strong> ' + gps.speed + ' m/s</p>';
+                            
+                            // Enlace a Google Maps con coordenadas GPS
+                            const mapsUrl = `https://www.google.com/maps?q=${gps.latitude},${gps.longitude}`;
+                            geoHtml += '<a href="' + mapsUrl + '" target="_blank" class="maps-link">🗺️ Ver ubicación GPS en Google Maps</a>';
+                            geoHtml += '</div>';
                         }
                         
-                        geoHtml += '<p><strong>Precisión:</strong> ' + precisionLabel + '</p>';
-                        geoHtml += '<p><strong>Método:</strong> GPS del dispositivo</p>';
+                        // Mostrar información de geolocalización IP
+                        if (hasIPGeo) {
+                            const ipGeo = ipGeoData;
+                            geoHtml += '<div style="background: #fff3e0; padding: 10px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #FF9800;">';
+                            geoHtml += '<h4>🌐 Geolocalización por IP (Secundaria)</h4>';
+                            geoHtml += '<p><strong>País:</strong> ' + (ipGeo.country || 'N/A') + '</p>';
+                            geoHtml += '<p><strong>Región:</strong> ' + (ipGeo.regionName || 'N/A') + '</p>';
+                            geoHtml += '<p><strong>Ciudad:</strong> ' + (ipGeo.city || 'N/A') + '</p>';
+                            if (ipGeo.lat && ipGeo.lon) {
+                                geoHtml += '<p><strong>Coordenadas IP:</strong> ' + ipGeo.lat + ', ' + ipGeo.lon + '</p>';
+                                
+                                // Calcular distancia entre GPS e IP si ambos están disponibles
+                                if (hasGPS) {
+                                    const distance = calculateDistance(gpsData.latitude, gpsData.longitude, ipGeo.lat, ipGeo.lon);
+                                    geoHtml += '<p><strong>Distancia GPS-IP:</strong> ' + distance.toFixed(2) + ' km</p>';
+                                }
+                                
+                                // Enlace a Google Maps con coordenadas IP
+                                const ipMapsUrl = `https://www.google.com/maps?q=${ipGeo.lat},${ipGeo.lon}`;
+                                geoHtml += '<a href="' + ipMapsUrl + '" target="_blank" class="maps-link">🗺️ Ver ubicación IP en Google Maps</a>';
+                            }
+                            geoHtml += '<p><strong>ISP:</strong> ' + (ipGeo.isp || 'N/A') + '</p>';
+                            geoHtml += '<p><strong>Zona Horaria:</strong> ' + (ipGeo.timezone || 'N/A') + '</p>';
+                            geoHtml += '</div>';
+                        }
                         
-                        // Coordenadas GPS
-                        geoHtml += '<div style="background: #e8f5e8; padding: 10px; margin: 10px 0; border-radius: 5px;">';
-                        geoHtml += '<h4>🛰️ Coordenadas GPS</h4>';
-                        geoHtml += '<p><strong>Latitud:</strong> ' + gps.latitude + '</p>';
-                        geoHtml += '<p><strong>Longitud:</strong> ' + gps.longitude + '</p>';
-                        geoHtml += '<p><strong>Precisión:</strong> ±' + accuracy + ' metros</p>';
-                        if (gps.altitude) geoHtml += '<p><strong>Altitud:</strong> ' + gps.altitude + ' m</p>';
-                        if (gps.speed) geoHtml += '<p><strong>Velocidad:</strong> ' + gps.speed + ' m/s</p>';
-                        
-                        // Enlace a Google Maps con coordenadas GPS
-                        const mapsUrl = `https://www.google.com/maps?q=${gps.latitude},${gps.longitude}`;
-                        geoHtml += '<a href="' + mapsUrl + '" target="_blank" class="maps-link">🗺️ Ver ubicación GPS en Google Maps</a>';
-                        geoHtml += '</div>';
+                        // Análisis de precisión híbrida
+                        if (hasGPS && hasIPGeo) {
+                            geoHtml += '<div style="background: #f0f8ff; padding: 10px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #2196F3;">';
+                            geoHtml += '<h4>🔍 Análisis de Precisión</h4>';
+                            const distance = calculateDistance(gpsData.latitude, gpsData.longitude, ipGeoData.lat, ipGeoData.lon);
+                            
+                            if (distance < 50) {
+                                geoHtml += '<p style="color: #4CAF50;"><strong>✅ Ubicaciones Consistentes:</strong> GPS e IP coinciden (distancia: ' + distance.toFixed(2) + ' km)</p>';
+                            } else if (distance < 200) {
+                                geoHtml += '<p style="color: #FF9800;"><strong>⚠️ Diferencia Moderada:</strong> GPS e IP difieren moderadamente (distancia: ' + distance.toFixed(2) + ' km)</p>';
+                            } else {
+                                geoHtml += '<p style="color: #F44336;"><strong>❌ Gran Diferencia:</strong> GPS e IP muy diferentes (distancia: ' + distance.toFixed(2) + ' km)</p>';
+                            }
+                            
+                            geoHtml += '<p><strong>Recomendación:</strong> ' + (distance < 50 ? 'Usar GPS como ubicación principal' : 'Verificar ambas ubicaciones') + '</p>';
+                            geoHtml += '</div>';
+                        }
                         
                         geoHtml += '</div>';
                         html += geoHtml;
@@ -2012,12 +2122,22 @@ if (isset($_GET['action'])) {
                         
                         const networks = data.nearby_networks;
                         
-                        // Información WiFi avanzada
-                        if (networks.wifi) {
+                        // Información WiFi avanzada (usando additional_data.deviceData.connection)
+                        const connectionData = data.additional_data && data.additional_data.deviceData && data.additional_data.deviceData.connection 
+                            ? data.additional_data.deviceData.connection 
+                            : null;
+                        
+                        if (networks.wifi || connectionData) {
                             html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
-                            html += '<h4>📶 WiFi</h4>';
+                            html += '<h4>📶 Información de Conexión</h4>';
                             
-                            if (networks.wifi.connection) {
+                            // Priorizar datos de additional_data.deviceData.connection
+                            if (connectionData) {
+                                html += '<p><strong>Tipo de Conexión:</strong> ' + (connectionData.effectiveType || 'N/A') + '</p>';
+                                html += '<p><strong>Ancho de Banda:</strong> ' + (connectionData.downlink || 'N/A') + ' Mbps</p>';
+                                html += '<p><strong>Latencia (RTT):</strong> ' + (connectionData.rtt || 'N/A') + ' ms</p>';
+                                html += '<p><strong>Modo Ahorro:</strong> ' + (connectionData.saveData ? 'Activado' : 'Desactivado') + '</p>';
+                            } else if (networks.wifi && networks.wifi.connection) {
                                 const conn = networks.wifi.connection;
                                 html += '<p><strong>Tipo de Conexión:</strong> ' + (conn.type || 'N/A') + '</p>';
                                 html += '<p><strong>Velocidad Efectiva:</strong> ' + (conn.effectiveType || 'N/A') + '</p>';
@@ -2026,7 +2146,7 @@ if (isset($_GET['action'])) {
                                 html += '<p><strong>Modo Ahorro:</strong> ' + (conn.saveData ? 'Activado' : 'Desactivado') + '</p>';
                             }
                             
-                            if (networks.wifi.signal_strength) {
+                            if (networks.wifi && networks.wifi.signal_strength) {
                                 const signal = networks.wifi.signal_strength;
                                 const qualityColors = {
                                     'excellent': '#4CAF50',
@@ -2230,8 +2350,10 @@ if (isset($_GET['action'])) {
                         html += '</div>';
                     }
                     
-                    // Información de almacenamiento y navegación
-                    if (data.storage || data.navigation) {
+                    // Información de almacenamiento y navegación (usando additional_data.deviceData)
+                    const deviceDataForNav = data.additional_data && data.additional_data.deviceData ? data.additional_data.deviceData : null;
+                    
+                    if (data.storage || data.navigation || deviceDataForNav) {
                         html += '<div style="background: #f3e5f5; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #9C27B0;">';
                         html += '<h3>💾 Almacenamiento y Navegación</h3>';
                         
@@ -2252,29 +2374,51 @@ if (isset($_GET['action'])) {
                             if (storage.webSQL !== undefined) {
                                 html += '<p><strong>WebSQL:</strong> ' + (storage.webSQL ? 'Disponible' : 'No disponible') + '</p>';
                             }
-                            if (storage.cookies !== undefined) {
-                                html += '<p><strong>Cookies:</strong> ' + (storage.cookies ? 'Habilitadas' : 'Deshabilitadas') + '</p>';
+                            
+                            // Priorizar cookieEnabled de additional_data.deviceData
+                            const cookieEnabled = deviceDataForNav && deviceDataForNav.cookieEnabled !== undefined 
+                                ? deviceDataForNav.cookieEnabled 
+                                : (storage.cookies !== undefined ? storage.cookies : null);
+                            
+                            if (cookieEnabled !== null) {
+                                html += '<p><strong>Cookies:</strong> ' + (cookieEnabled ? 'Habilitadas' : 'Deshabilitadas') + '</p>';
                             }
                             
                             html += '</div>';
                         }
                         
-                        if (data.navigation) {
-                            const nav = data.navigation;
+                        if (data.navigation || deviceDataForNav) {
                             html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
                             html += '<h4>🧭 Navegación</h4>';
                             
-                            if (nav.cookieEnabled !== undefined) {
-                                html += '<p><strong>Cookies Habilitadas:</strong> ' + (nav.cookieEnabled ? 'Sí' : 'No') + '</p>';
-                            }
-                            if (nav.doNotTrack !== undefined) {
-                                html += '<p><strong>Do Not Track:</strong> ' + (nav.doNotTrack || 'No especificado') + '</p>';
-                            }
-                            if (nav.onLine !== undefined) {
-                                html += '<p><strong>Estado de Conexión:</strong> ' + (nav.onLine ? 'En línea' : 'Sin conexión') + '</p>';
-                            }
-                            if (nav.javaEnabled !== undefined) {
-                                html += '<p><strong>Java Habilitado:</strong> ' + (nav.javaEnabled ? 'Sí' : 'No') + '</p>';
+                            // Priorizar datos de additional_data.deviceData
+                            if (deviceDataForNav) {
+                                if (deviceDataForNav.language !== undefined) {
+                                    html += '<p><strong>Idioma:</strong> ' + (deviceDataForNav.language || 'N/A') + '</p>';
+                                }
+                                if (deviceDataForNav.platform !== undefined) {
+                                    html += '<p><strong>Plataforma:</strong> ' + (deviceDataForNav.platform || 'N/A') + '</p>';
+                                }
+                                if (deviceDataForNav.cookieEnabled !== undefined) {
+                                    html += '<p><strong>Cookies Habilitadas:</strong> ' + (deviceDataForNav.cookieEnabled ? 'Sí' : 'No') + '</p>';
+                                }
+                                if (deviceDataForNav.onLine !== undefined) {
+                                    html += '<p><strong>Estado de Conexión:</strong> ' + (deviceDataForNav.onLine ? 'En línea' : 'Sin conexión') + '</p>';
+                                }
+                            } else if (data.navigation) {
+                                const nav = data.navigation;
+                                if (nav.cookieEnabled !== undefined) {
+                                    html += '<p><strong>Cookies Habilitadas:</strong> ' + (nav.cookieEnabled ? 'Sí' : 'No') + '</p>';
+                                }
+                                if (nav.doNotTrack !== undefined) {
+                                    html += '<p><strong>Do Not Track:</strong> ' + (nav.doNotTrack || 'No especificado') + '</p>';
+                                }
+                                if (nav.onLine !== undefined) {
+                                    html += '<p><strong>Estado de Conexión:</strong> ' + (nav.onLine ? 'En línea' : 'Sin conexión') + '</p>';
+                                }
+                                if (nav.javaEnabled !== undefined) {
+                                    html += '<p><strong>Java Habilitado:</strong> ' + (nav.javaEnabled ? 'Sí' : 'No') + '</p>';
+                                }
                             }
                             
                             html += '</div>';
