@@ -944,10 +944,6 @@ if (isset($_GET['action'])) {
             #nequiMap {
                 height: 250px !important;
             }
-            border-left: 4px solid #e91e63;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 0 5px 5px 0;
         }
         
         @media (max-width: 768px) {
@@ -1308,22 +1304,37 @@ if (isset($_GET['action'])) {
         <!-- Fotos de Retos Completados -->
         <?php 
         $challengePhotos = [];
-        if (is_dir(PHOTOS_DIR)) {
-            $photoFiles = glob(PHOTOS_DIR . '/*.{jpg,jpeg,png,gif}', GLOB_BRACE);
-            foreach ($photoFiles as $photoFile) {
-                $filename = basename($photoFile);
-                // Extraer información del nombre del archivo: participantId_challengeId_timestamp.ext
-                if (preg_match('/^(.+)_(\d+)_(\d+)\.(jpg|jpeg|png|gif)$/i', $filename, $matches)) {
-                    $challengePhotos[] = [
-                        'filename' => $filename,
-                        'participant_id' => $matches[1],
-                        'challenge_id' => $matches[2],
-                        'timestamp' => $matches[3],
-                        'extension' => $matches[4],
-                        'path' => $photoFile
-                    ];
+        $participantsDir = __DIR__ . '/../participants';
+        
+        if (is_dir($participantsDir)) {
+            // Buscar en todos los directorios de participantes
+            $participantDirs = glob($participantsDir . '/challenges_*', GLOB_ONLYDIR);
+            
+            foreach ($participantDirs as $participantDir) {
+                $photosDir = $participantDir . '/photos';
+                if (is_dir($photosDir)) {
+                    $photoFiles = glob($photosDir . '/*.{jpg,jpeg,png,gif,webp}', GLOB_BRACE);
+                    
+                    foreach ($photoFiles as $photoFile) {
+                        $filename = basename($photoFile);
+                        $participantId = basename($participantDir);
+                        
+                        // Extraer información del nombre del archivo: challenge_X_date_time_uniqid.ext
+                        if (preg_match('/^challenge_(\d+)_([\d\-_]+)_([a-f0-9]+)\.(jpg|jpeg|png|gif|webp)$/i', $filename, $matches)) {
+                            $challengePhotos[] = [
+                                'filename' => $filename,
+                                'participant_id' => str_replace('challenges_', '', $participantId),
+                                'challenge_id' => $matches[1],
+                                'timestamp' => filemtime($photoFile),
+                                'extension' => $matches[4],
+                                'path' => $photoFile,
+                                'relative_path' => '../participants/' . basename($participantDir) . '/photos/' . $filename
+                            ];
+                        }
+                    }
                 }
             }
+            
             // Ordenar por timestamp descendente
             usort($challengePhotos, function($a, $b) {
                 return $b['timestamp'] - $a['timestamp'];
@@ -1340,10 +1351,10 @@ if (isset($_GET['action'])) {
                 <div class="photos-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
                     <?php foreach (array_slice($challengePhotos, 0, 12) as $photo): ?>
                     <div class="photo-card" style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <img src="../photos/<?php echo htmlspecialchars($photo['filename']); ?>" 
+                        <img src="<?php echo htmlspecialchars($photo['relative_path']); ?>" 
                              alt="Reto <?php echo $photo['challenge_id']; ?>" 
                              style="width: 100%; height: 150px; object-fit: cover; cursor: pointer;"
-                             onclick="viewPhotoDetails('<?php echo htmlspecialchars($photo['filename']); ?>', '<?php echo $photo['participant_id']; ?>', '<?php echo $photo['challenge_id']; ?>', '<?php echo $photo['timestamp']; ?>')">
+                             onclick="viewPhotoDetails('<?php echo htmlspecialchars($photo['relative_path']); ?>', '<?php echo $photo['participant_id']; ?>', '<?php echo $photo['challenge_id']; ?>', '<?php echo $photo['timestamp']; ?>')">
                         <div style="padding: 10px;">
                             <p style="margin: 0; font-size: 12px; color: #666;">
                                 <strong>Reto:</strong> <?php echo $photo['challenge_id']; ?><br>
@@ -1379,10 +1390,10 @@ if (isset($_GET['action'])) {
                             <td>Reto <?php echo $photo['challenge_id']; ?></td>
                             <td><?php echo htmlspecialchars($photo['filename']); ?></td>
                             <td>
-                                <button class="btn btn-info" onclick="viewPhotoDetails('<?php echo htmlspecialchars($photo['filename']); ?>', '<?php echo $photo['participant_id']; ?>', '<?php echo $photo['challenge_id']; ?>', '<?php echo $photo['timestamp']; ?>')" title="Ver foto">
+                                <button class="btn btn-info" onclick="viewPhotoDetails('<?php echo htmlspecialchars($photo['relative_path']); ?>', '<?php echo $photo['participant_id']; ?>', '<?php echo $photo['challenge_id']; ?>', '<?php echo $photo['timestamp']; ?>')" title="Ver foto">
                                     👁️
                                 </button>
-                                <button class="btn btn-danger" onclick="deletePhoto('<?php echo htmlspecialchars($photo['filename']); ?>')" title="Eliminar foto">
+                                <button class="btn btn-danger" onclick="deletePhoto('<?php echo htmlspecialchars($photo['path']); ?>')" title="Eliminar foto">
                                     🗑️
                                 </button>
                             </td>
@@ -2107,17 +2118,18 @@ if (isset($_GET['action'])) {
             }
         }
         
-        function viewPhotoDetails(filename, participantId, challengeId, timestamp) {
+        function viewPhotoDetails(photoPath, participantId, challengeId, timestamp) {
             const modal = document.getElementById('detailsModal');
             const content = document.getElementById('modalContent');
             
             const date = new Date(parseInt(timestamp) * 1000);
+            const filename = photoPath.split('/').pop();
             
             let html = `
                 <div class="photo-details">
                     <h3>📸 Detalles de la Foto del Reto</h3>
                     <div style="text-align: center; margin: 20px 0;">
-                        <img src="../photos/${filename}" alt="Foto del reto" style="max-width: 100%; max-height: 400px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                        <img src="${photoPath}" alt="Foto del reto" style="max-width: 100%; max-height: 400px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
                     </div>
                     <div class="photo-info">
                         <p><strong>📋 Reto:</strong> Reto ${challengeId}</p>

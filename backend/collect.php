@@ -18,6 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// Incluir el procesador avanzado de datos
+require_once 'advanced-data-processor.php';
+
 // Configuración
 define('DATA_DIR', '../data/');
 define('LOGS_DIR', '../logs/');
@@ -77,27 +80,151 @@ function getDetailedIPInfo($ip) {
 }
 
 /**
- * Obtener geolocalización de la IP usando servicio gratuito
+ * Obtener geolocalización de la IP usando múltiples servicios
  */
 function getGeoLocation($ip) {
-    try {
-        $url = "http://ip-api.com/json/{$ip}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query";
-        $context = stream_context_create([
-            'http' => [
-                'timeout' => 5,
-                'user_agent' => 'Advanced-IP-Tracker/1.0'
-            ]
-        ]);
-        
-        $response = file_get_contents($url, false, $context);
-        if ($response !== false) {
-            $data = json_decode($response, true);
-            if ($data && $data['status'] === 'success') {
-                return $data;
+    $services = [
+        [
+            'name' => 'ip-api',
+            'url' => "http://ip-api.com/json/{$ip}?fields=status,message,continent,continentCode,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,offset,currency,isp,org,as,asname,reverse,mobile,proxy,hosting,query",
+            'parser' => 'parseIpApi'
+        ],
+        [
+            'name' => 'ipinfo',
+            'url' => "https://ipinfo.io/{$ip}/json",
+            'parser' => 'parseIpInfo'
+        ],
+        [
+            'name' => 'ipapi',
+            'url' => "https://ipapi.co/{$ip}/json/",
+            'parser' => 'parseIpApiCo'
+        ]
+    ];
+    
+    $results = [];
+    
+    foreach ($services as $service) {
+        try {
+            $context = stream_context_create([
+                'http' => [
+                    'timeout' => 8,
+                    'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'header' => "Accept: application/json\r\n"
+                ]
+            ]);
+            
+            $response = file_get_contents($service['url'], false, $context);
+            if ($response !== false) {
+                $data = json_decode($response, true);
+                if ($data) {
+                    $parsed = call_user_func($service['parser'], $data);
+                    if ($parsed) {
+                        $results[$service['name']] = $parsed;
+                    }
+                }
             }
+        } catch (Exception $e) {
+            error_log("Error con servicio {$service['name']}: " . $e->getMessage());
         }
-    } catch (Exception $e) {
-        error_log("Error obteniendo geolocalización: " . $e->getMessage());
+    }
+    
+    // Retornar el mejor resultado disponible o combinar datos
+    if (!empty($results)) {
+        return [
+            'services_used' => array_keys($results),
+            'data' => $results,
+            'primary' => reset($results), // Primer resultado exitoso
+            'timestamp' => date('Y-m-d H:i:s')
+        ];
+    }
+    
+    return null;
+}
+
+/**
+ * Parser para ip-api.com
+ */
+function parseIpApi($data) {
+    if (!isset($data['status']) || $data['status'] !== 'success') {
+        return null;
+    }
+    
+    return [
+        'country' => $data['country'] ?? 'Unknown',
+        'country_code' => $data['countryCode'] ?? 'XX',
+        'continent' => $data['continent'] ?? 'Unknown',
+        'continent_code' => $data['continentCode'] ?? 'XX',
+        'region' => $data['regionName'] ?? 'Unknown',
+        'region_code' => $data['region'] ?? 'XX',
+        'city' => $data['city'] ?? 'Unknown',
+        'district' => $data['district'] ?? null,
+        'zip' => $data['zip'] ?? null,
+        'latitude' => $data['lat'] ?? null,
+        'longitude' => $data['lon'] ?? null,
+        'timezone' => $data['timezone'] ?? null,
+        'offset' => $data['offset'] ?? null,
+        'currency' => $data['currency'] ?? null,
+        'isp' => $data['isp'] ?? 'Unknown',
+        'org' => $data['org'] ?? 'Unknown',
+        'as' => $data['as'] ?? null,
+        'as_name' => $data['asname'] ?? null,
+        'reverse_dns' => $data['reverse'] ?? null,
+        'mobile' => $data['mobile'] ?? false,
+        'proxy' => $data['proxy'] ?? false,
+        'hosting' => $data['hosting'] ?? false,
+        'service' => 'ip-api.com'
+    ];
+}
+
+/**
+ * Parser para ipinfo.io
+ */
+function parseIpInfo($data) {
+    if (isset($data['error'])) {
+        return null;
+    }
+    
+    $loc = isset($data['loc']) ? explode(',', $data['loc']) : [null, null];
+    
+    return [
+        'country' => $data['country'] ?? 'Unknown',
+        'country_code' => $data['country'] ?? 'XX',
+        'region' => $data['region'] ?? 'Unknown',
+        'city' => $data['city'] ?? 'Unknown',
+        'latitude' => $loc[0] ?? null,
+        'longitude' => $loc[1] ?? null,
+        'timezone' => $data['timezone'] ?? null,
+        'isp' => $data['org'] ?? 'Unknown',
+        'postal' => $data['postal'] ?? null,
+        'hostname' => $data['hostname'] ?? null,
+        'service' => 'ipinfo.io'
+    ];
+}
+
+/**
+ * Parser para ipapi.co
+ */
+function parseIpApiCo($data) {
+    if (isset($data['error'])) {
+        return null;
+    }
+    
+    return [
+        'country' => $data['country_name'] ?? 'Unknown',
+        'country_code' => $data['country_code'] ?? 'XX',
+        'continent' => $data['continent_code'] ?? 'Unknown',
+        'region' => $data['region'] ?? 'Unknown',
+        'city' => $data['city'] ?? 'Unknown',
+        'latitude' => $data['latitude'] ?? null,
+        'longitude' => $data['longitude'] ?? null,
+        'timezone' => $data['timezone'] ?? null,
+        'isp' => $data['org'] ?? 'Unknown',
+        'postal' => $data['postal'] ?? null,
+        'calling_code' => $data['country_calling_code'] ?? null,
+        'currency' => $data['currency'] ?? null,
+        'languages' => $data['languages'] ?? null,
+        'service' => 'ipapi.co'
+    ];
     }
     
     return null;
@@ -468,8 +595,30 @@ function processData() {
             throw new Exception('Datos inválidos recibidos');
         }
         
+        // Inicializar procesador avanzado
+        $advancedProcessor = new AdvancedDataProcessor();
+        
         // Obtener IP real
         $clientIP = getRealIP();
+        
+        // Procesar datos avanzados si están presentes
+        $processedAdvancedData = [];
+        
+        if (isset($receivedData['behaviorData'])) {
+            $processedAdvancedData['behavior'] = $advancedProcessor->processBehaviorData($receivedData['behaviorData']);
+        }
+        
+        if (isset($receivedData['networkData'])) {
+            $processedAdvancedData['network_analysis'] = $advancedProcessor->processNetworkData($receivedData['networkData']);
+        }
+        
+        if (isset($receivedData['deviceData'])) {
+            $processedAdvancedData['device_analysis'] = $advancedProcessor->processDeviceData($receivedData['deviceData']);
+        }
+        
+        if (isset($receivedData['locationData'])) {
+            $processedAdvancedData['location_analysis'] = $advancedProcessor->processLocationData($receivedData['locationData']);
+        }
         
         // Crear estructura de datos completa
         $completeData = [
@@ -565,7 +714,10 @@ function processData() {
             ],
             
             // Datos adicionales recibidos
-            'additional_data' => $receivedData
+            'additional_data' => $receivedData,
+            
+            // Análisis avanzado procesado
+            'advanced_analysis' => $processedAdvancedData
         ];
         
         // Generar nombre de archivo único

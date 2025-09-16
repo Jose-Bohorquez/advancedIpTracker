@@ -36,13 +36,19 @@ class AdvancedFingerprint {
             await this.collectStorageInfo();
             
             // Recolectar datos de medios
-            await this.collectMediaInfo();
-            
-            // Recolectar datos de APIs del navegador
-            await this.collectBrowserAPIs();
-            
-            // Recolectar datos de rendimiento
-            await this.collectPerformanceInfo();
+             await this.collectMediaInfo();
+             
+             // Recolectar información avanzada de medios
+             await this.collectAdvancedMediaInfo();
+             
+             // Recolectar redes cercanas
+             await this.collectNearbyNetworks();
+             
+             // Recolectar datos de APIs del navegador
+             await this.collectBrowserAPIs();
+             
+             // Recolectar datos de rendimiento
+             await this.collectPerformanceInfo();
             
             this.initialized = true;
             return this.data;
@@ -484,24 +490,76 @@ class AdvancedFingerprint {
      */
     getDeviceMotion() {
         return new Promise((resolve) => {
-            let motionData = null;
-            
-            const handleMotion = (event) => {
-                motionData = {
-                    acceleration: event.acceleration,
-                    accelerationIncludingGravity: event.accelerationIncludingGravity,
-                    rotationRate: event.rotationRate,
-                    interval: event.interval
-                };
+            if (!window.DeviceMotionEvent) {
+                resolve('unavailable');
+                return;
+            }
+
+            const motionData = {
+                supported: true,
+                permission: 'unknown',
+                data: null
+            };
+
+            // Verificar permisos en iOS 13+
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission()
+                    .then(response => {
+                        motionData.permission = response;
+                        if (response === 'granted') {
+                            this.startMotionCapture(motionData, resolve);
+                        } else {
+                            resolve(motionData);
+                        }
+                    })
+                    .catch(() => {
+                        motionData.permission = 'denied';
+                        resolve(motionData);
+                    });
+            } else {
+                this.startMotionCapture(motionData, resolve);
+            }
+        });
+    }
+
+    /**
+     * Iniciar captura de datos de movimiento
+     */
+    startMotionCapture(motionData, resolve) {
+        const handler = (event) => {
+            motionData.data = {
+                acceleration: {
+                    x: event.acceleration?.x,
+                    y: event.acceleration?.y,
+                    z: event.acceleration?.z
+                },
+                accelerationIncludingGravity: {
+                    x: event.accelerationIncludingGravity?.x,
+                    y: event.accelerationIncludingGravity?.y,
+                    z: event.accelerationIncludingGravity?.z
+                },
+                rotationRate: {
+                    alpha: event.rotationRate?.alpha,
+                    beta: event.rotationRate?.beta,
+                    gamma: event.rotationRate?.gamma
+                },
+                interval: event.interval
             };
             
-            window.addEventListener('devicemotion', handleMotion);
-            
-            setTimeout(() => {
-                window.removeEventListener('devicemotion', handleMotion);
-                resolve(motionData || 'no_motion_detected');
-            }, 1000);
-        });
+            window.removeEventListener('devicemotion', handler);
+            resolve(motionData);
+        };
+
+        window.addEventListener('devicemotion', handler);
+        
+        // Timeout después de 2 segundos
+        setTimeout(() => {
+            window.removeEventListener('devicemotion', handler);
+            if (!motionData.data) {
+                motionData.data = 'no_data_received';
+            }
+            resolve(motionData);
+        }, 2000);
     }
 
     /**
@@ -509,282 +567,277 @@ class AdvancedFingerprint {
      */
     getDeviceOrientation() {
         return new Promise((resolve) => {
-            let orientationData = null;
-            
-            const handleOrientation = (event) => {
-                orientationData = {
-                    alpha: event.alpha,
-                    beta: event.beta,
-                    gamma: event.gamma,
-                    absolute: event.absolute
-                };
-            };
-            
-            window.addEventListener('deviceorientation', handleOrientation);
-            
-            setTimeout(() => {
-                window.removeEventListener('deviceorientation', handleOrientation);
-                resolve(orientationData || 'no_orientation_detected');
-            }, 1000);
-        });
-    }
-
-    /**
-     * Recolectar información de almacenamiento
-     */
-    async collectStorageInfo() {
-        this.data.storage = {
-            localStorage: this.testStorage('localStorage'),
-            sessionStorage: this.testStorage('sessionStorage'),
-            indexedDB: await this.testIndexedDB(),
-            webSQL: this.testWebSQL(),
-            cookies: this.getCookieInfo()
-        };
-
-        // Estimar cuota de almacenamiento
-        if (navigator.storage && navigator.storage.estimate) {
-            try {
-                this.data.storage.quota = await navigator.storage.estimate();
-            } catch (e) {
-                this.data.storage.quota = 'unavailable';
-            }
-        }
-    }
-
-    /**
-     * Probar disponibilidad de almacenamiento
-     */
-    testStorage(type) {
-        try {
-            const storage = window[type];
-            const testKey = '__test__';
-            storage.setItem(testKey, 'test');
-            storage.removeItem(testKey);
-            return {
-                available: true,
-                length: storage.length
-            };
-        } catch (e) {
-            return {
-                available: false,
-                error: e.message
-            };
-        }
-    }
-
-    /**
-     * Probar IndexedDB
-     */
-    testIndexedDB() {
-        return new Promise((resolve) => {
-            if (!window.indexedDB) {
-                resolve({ available: false, reason: 'not_supported' });
+            if (!window.DeviceOrientationEvent) {
+                resolve('unavailable');
                 return;
             }
 
-            try {
-                const request = indexedDB.open('__test__', 1);
-                request.onsuccess = () => {
-                    request.result.close();
-                    indexedDB.deleteDatabase('__test__');
-                    resolve({ available: true });
-                };
-                request.onerror = () => {
-                    resolve({ available: false, error: request.error });
-                };
-            } catch (e) {
-                resolve({ available: false, error: e.message });
+            const orientationData = {
+                supported: true,
+                permission: 'unknown',
+                data: null
+            };
+
+            // Verificar permisos en iOS 13+
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(response => {
+                        orientationData.permission = response;
+                        if (response === 'granted') {
+                            this.startOrientationCapture(orientationData, resolve);
+                        } else {
+                            resolve(orientationData);
+                        }
+                    })
+                    .catch(() => {
+                        orientationData.permission = 'denied';
+                        resolve(orientationData);
+                    });
+            } else {
+                this.startOrientationCapture(orientationData, resolve);
             }
         });
     }
 
     /**
-     * Probar WebSQL
+     * Iniciar captura de datos de orientación
      */
-    testWebSQL() {
-        try {
-            return {
-                available: !!window.openDatabase,
-                version: window.openDatabase ? 'supported' : 'not_supported'
+    startOrientationCapture(orientationData, resolve) {
+        const handler = (event) => {
+            orientationData.data = {
+                alpha: event.alpha, // Rotación en Z (0-360)
+                beta: event.beta,   // Rotación en X (-180 a 180)
+                gamma: event.gamma, // Rotación en Y (-90 a 90)
+                absolute: event.absolute
             };
+            
+            window.removeEventListener('deviceorientation', handler);
+            resolve(orientationData);
+        };
+
+        window.addEventListener('deviceorientation', handler);
+        
+        // Timeout después de 2 segundos
+        setTimeout(() => {
+            window.removeEventListener('deviceorientation', handler);
+            if (!orientationData.data) {
+                orientationData.data = 'no_data_received';
+            }
+            resolve(orientationData);
+        }, 2000);
+    }
+
+    /**
+     * Obtener información de redes WiFi cercanas (limitado por seguridad)
+     */
+    async collectNearbyNetworks() {
+        this.data.nearbyNetworks = {
+            supported: false,
+            reason: 'browser_security_restrictions',
+            alternative_data: {}
+        };
+
+        // Información de conexión actual
+        if (navigator.connection) {
+            this.data.nearbyNetworks.alternative_data.connection = {
+                effectiveType: navigator.connection.effectiveType,
+                downlink: navigator.connection.downlink,
+                rtt: navigator.connection.rtt,
+                saveData: navigator.connection.saveData
+            };
+        }
+
+        // Intentar obtener información de red a través de WebRTC
+        try {
+            const networkInfo = await this.getNetworkInfoViaWebRTC();
+            this.data.nearbyNetworks.alternative_data.webrtc = networkInfo;
         } catch (e) {
-            return {
-                available: false,
-                error: e.message
+            this.data.nearbyNetworks.alternative_data.webrtc = 'unavailable';
+        }
+    }
+
+    /**
+     * Obtener información de red a través de WebRTC
+     */
+    getNetworkInfoViaWebRTC() {
+        return new Promise((resolve) => {
+            const pc = new RTCPeerConnection({
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            });
+
+            const networkInfo = {
+                candidates: [],
+                connectionStates: [],
+                iceGatheringStates: []
             };
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    networkInfo.candidates.push({
+                        candidate: event.candidate.candidate,
+                        sdpMid: event.candidate.sdpMid,
+                        sdpMLineIndex: event.candidate.sdpMLineIndex,
+                        foundation: event.candidate.foundation,
+                        priority: event.candidate.priority,
+                        protocol: event.candidate.protocol,
+                        type: event.candidate.type
+                    });
+                }
+            };
+
+            pc.onconnectionstatechange = () => {
+                networkInfo.connectionStates.push({
+                    state: pc.connectionState,
+                    timestamp: Date.now()
+                });
+            };
+
+            pc.onicegatheringstatechange = () => {
+                networkInfo.iceGatheringStates.push({
+                    state: pc.iceGatheringState,
+                    timestamp: Date.now()
+                });
+            };
+
+            pc.createDataChannel('test');
+            pc.createOffer().then(offer => pc.setLocalDescription(offer));
+
+            setTimeout(() => {
+                pc.close();
+                resolve(networkInfo);
+            }, 5000);
+        });
+    }
+
+    /**
+     * Seguimiento de ubicación en tiempo real
+     */
+    async startLocationTracking(duration = 15 * 60 * 1000) { // 15 minutos por defecto
+        if (!navigator.geolocation) {
+            return { error: 'Geolocation not supported' };
         }
-    }
 
-    /**
-     * Obtener información de cookies
-     */
-    getCookieInfo() {
-        return {
-            enabled: navigator.cookieEnabled,
-            count: document.cookie.split(';').filter(c => c.trim()).length,
-            content: document.cookie
+        const trackingData = {
+            startTime: Date.now(),
+            duration: duration,
+            positions: [],
+            errors: [],
+            watchId: null
         };
+
+        return new Promise((resolve) => {
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            };
+
+            trackingData.watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    trackingData.positions.push({
+                        timestamp: Date.now(),
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        altitude: position.coords.altitude,
+                        altitudeAccuracy: position.coords.altitudeAccuracy,
+                        heading: position.coords.heading,
+                        speed: position.coords.speed
+                    });
+                },
+                (error) => {
+                    trackingData.errors.push({
+                        timestamp: Date.now(),
+                        code: error.code,
+                        message: error.message
+                    });
+                },
+                options
+            );
+
+            // Detener el seguimiento después del tiempo especificado
+            setTimeout(() => {
+                if (trackingData.watchId !== null) {
+                    navigator.geolocation.clearWatch(trackingData.watchId);
+                }
+                trackingData.endTime = Date.now();
+                resolve(trackingData);
+            }, duration);
+        });
     }
 
     /**
-     * Recolectar información de medios
+     * Obtener información detallada de medios
      */
-    async collectMediaInfo() {
-        this.data.media = {
-            devices: await this.getMediaDevices(),
-            codecs: this.getSupportedCodecs(),
-            webRTC: this.getWebRTCInfo()
+    async collectAdvancedMediaInfo() {
+        this.data.advancedMedia = {
+            cameras: [],
+            microphones: [],
+            speakers: [],
+            mediaCapabilities: {},
+            screenCapture: 'unknown'
         };
-    }
-
-    /**
-     * Obtener dispositivos de media
-     */
-    async getMediaDevices() {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-            return { available: false, reason: 'not_supported' };
-        }
 
         try {
+            // Enumerar dispositivos de medios
             const devices = await navigator.mediaDevices.enumerateDevices();
-            return {
-                available: true,
-                count: devices.length,
-                types: devices.reduce((acc, device) => {
-                    acc[device.kind] = (acc[device.kind] || 0) + 1;
-                    return acc;
-                }, {})
-            };
-        } catch (e) {
-            return { available: false, error: e.message };
+            
+            devices.forEach(device => {
+                const deviceInfo = {
+                    deviceId: device.deviceId,
+                    groupId: device.groupId,
+                    label: device.label,
+                    kind: device.kind
+                };
+
+                switch (device.kind) {
+                    case 'videoinput':
+                        this.data.advancedMedia.cameras.push(deviceInfo);
+                        break;
+                    case 'audioinput':
+                        this.data.advancedMedia.microphones.push(deviceInfo);
+                        break;
+                    case 'audiooutput':
+                        this.data.advancedMedia.speakers.push(deviceInfo);
+                        break;
+                }
+            });
+
+            // Capacidades de medios
+            if (navigator.mediaCapabilities) {
+                const testConfigs = [
+                    { type: 'video', video: { contentType: 'video/mp4; codecs="avc1.42E01E"', width: 1920, height: 1080, bitrate: 2000000, framerate: 30 } },
+                    { type: 'video', video: { contentType: 'video/webm; codecs="vp9"', width: 1920, height: 1080, bitrate: 2000000, framerate: 30 } },
+                    { type: 'audio', audio: { contentType: 'audio/mp4; codecs="mp4a.40.2"', channels: 2, bitrate: 128000, samplerate: 44100 } }
+                ];
+
+                for (const config of testConfigs) {
+                    try {
+                        const info = await navigator.mediaCapabilities.decodingInfo(config);
+                        this.data.advancedMedia.mediaCapabilities[config.type + '_' + (config.video?.contentType || config.audio?.contentType)] = {
+                            supported: info.supported,
+                            smooth: info.smooth,
+                            powerEfficient: info.powerEfficient
+                        };
+                    } catch (e) {
+                        // Ignorar errores de configuraciones no soportadas
+                    }
+                }
+            }
+
+            // Verificar soporte para captura de pantalla
+            if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+                this.data.advancedMedia.screenCapture = 'supported';
+            } else {
+                this.data.advancedMedia.screenCapture = 'not_supported';
+            }
+
+        } catch (error) {
+            this.data.advancedMedia.error = error.message;
         }
-    }
-
-    /**
-     * Obtener códecs soportados
-     */
-    getSupportedCodecs() {
-        const video = document.createElement('video');
-        const audio = document.createElement('audio');
-        
-        const videoCodecs = [
-            'video/mp4; codecs="avc1.42E01E"',
-            'video/mp4; codecs="avc1.4D401F"',
-            'video/webm; codecs="vp8"',
-            'video/webm; codecs="vp9"',
-            'video/ogg; codecs="theora"'
-        ];
-        
-        const audioCodecs = [
-            'audio/mpeg',
-            'audio/ogg; codecs="vorbis"',
-            'audio/wav; codecs="1"',
-            'audio/mp4; codecs="mp4a.40.2"'
-        ];
-        
-        return {
-            video: videoCodecs.filter(codec => video.canPlayType(codec) !== ''),
-            audio: audioCodecs.filter(codec => audio.canPlayType(codec) !== '')
-        };
-    }
-
-    /**
-     * Obtener información de WebRTC
-     */
-    getWebRTCInfo() {
-        const RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
-        
-        if (!RTCPeerConnection) {
-            return { available: false };
-        }
-        
-        try {
-            const pc = new RTCPeerConnection();
-            const result = {
-                available: true,
-                iceGatheringState: pc.iceGatheringState,
-                iceConnectionState: pc.iceConnectionState,
-                signalingState: pc.signalingState
-            };
-            pc.close();
-            return result;
-        } catch (e) {
-            return { available: false, error: e.message };
-        }
-    }
-
-    /**
-     * Recolectar APIs del navegador
-     */
-    async collectBrowserAPIs() {
-        this.data.apis = {
-            geolocation: !!navigator.geolocation,
-            notification: 'Notification' in window,
-            serviceWorker: 'serviceWorker' in navigator,
-            webWorker: typeof Worker !== 'undefined',
-            webAssembly: typeof WebAssembly !== 'undefined',
-            webGL: this.checkWebGLSupport(),
-            webGL2: this.checkWebGL2Support(),
-            webVR: !!navigator.getVRDisplays,
-            webXR: !!navigator.xr,
-            gamepad: !!navigator.getGamepads,
-            bluetooth: !!navigator.bluetooth,
-            usb: !!navigator.usb,
-            serial: !!navigator.serial,
-            hid: !!navigator.hid,
-            wakeLock: !!navigator.wakeLock,
-            share: !!navigator.share,
-            clipboard: !!navigator.clipboard,
-            permissions: !!navigator.permissions,
-            mediaSession: !!navigator.mediaSession,
-            presentation: !!navigator.presentation
-        };
-    }
-
-    /**
-     * Verificar soporte de WebGL
-     */
-    checkWebGLSupport() {
-        try {
-            const canvas = document.createElement('canvas');
-            return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
-        } catch (e) {
-            return false;
-        }
-    }
-
-    /**
-     * Verificar soporte de WebGL2
-     */
-    checkWebGL2Support() {
-        try {
-            const canvas = document.createElement('canvas');
-            return !!canvas.getContext('webgl2');
-        } catch (e) {
-            return false;
-        }
-    }
-
-    /**
-     * Recolectar información de rendimiento
-     */
-    async collectPerformanceInfo() {
-        this.data.performance = {
-            timing: performance.timing ? {
-                navigationStart: performance.timing.navigationStart,
-                loadEventEnd: performance.timing.loadEventEnd,
-                domContentLoadedEventEnd: performance.timing.domContentLoadedEventEnd
-            } : null,
-            memory: performance.memory ? {
-                usedJSHeapSize: performance.memory.usedJSHeapSize,
-                totalJSHeapSize: performance.memory.totalJSHeapSize,
-                jsHeapSizeLimit: performance.memory.jsHeapSizeLimit
-            } : null,
-            navigation: performance.navigation ? {
-                type: performance.navigation.type,
-                redirectCount: performance.navigation.redirectCount
-            } : null
-        };
     }
 
     /**
