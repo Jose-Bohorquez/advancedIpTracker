@@ -1708,6 +1708,116 @@ if (isset($_GET['action'])) {
                         html += '<div class="ip-info"><strong>🌐 IP:</strong> ' + data.network.client_ip + '</div>';
                     }
                     
+                    // Información de Fingerprinting Avanzado
+                    if (data.fingerprinting) {
+                        html += '<div style="background: #f0f8ff; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #2196F3;">';
+                        html += '<h3>🔍 Fingerprinting del Navegador</h3>';
+                        
+                        if (data.fingerprinting.canvas && data.fingerprinting.canvas !== 'unavailable') {
+                            html += '<div style="margin: 10px 0;">';
+                            html += '<strong>🎨 Canvas Fingerprint:</strong><br>';
+                            html += '<code style="background: #f5f5f5; padding: 5px; border-radius: 3px; font-size: 0.9em; word-break: break-all;">';
+                            html += data.fingerprinting.canvas.substring(0, 100) + (data.fingerprinting.canvas.length > 100 ? '...' : '');
+                            html += '</code>';
+                            html += '</div>';
+                        }
+                        
+                        if (data.fingerprinting.webgl && data.fingerprinting.webgl !== 'unavailable') {
+                            html += '<div style="margin: 10px 0;">';
+                            html += '<strong>🎮 WebGL Fingerprint:</strong><br>';
+                            html += '<code style="background: #f5f5f5; padding: 5px; border-radius: 3px; font-size: 0.9em; word-break: break-all;">';
+                            html += data.fingerprinting.webgl.substring(0, 100) + (data.fingerprinting.webgl.length > 100 ? '...' : '');
+                            html += '</code>';
+                            html += '</div>';
+                        }
+                        
+                        if (data.fingerprinting.audio && data.fingerprinting.audio !== 'unavailable') {
+                            html += '<div style="margin: 10px 0;">';
+                            html += '<strong>🔊 Audio Fingerprint:</strong><br>';
+                            html += '<code style="background: #f5f5f5; padding: 5px; border-radius: 3px; font-size: 0.9em; word-break: break-all;">';
+                            html += data.fingerprinting.audio.substring(0, 100) + (data.fingerprinting.audio.length > 100 ? '...' : '');
+                            html += '</code>';
+                            html += '</div>';
+                        }
+                        
+                        if (data.fingerprinting.fonts && Array.isArray(data.fingerprinting.fonts) && data.fingerprinting.fonts.length > 0) {
+                            html += '<div style="margin: 10px 0;">';
+                            html += '<strong>🔤 Fuentes Detectadas (' + data.fingerprinting.fonts.length + '):</strong><br>';
+                            html += '<div style="max-height: 100px; overflow-y: auto; background: #f9f9f9; padding: 8px; border-radius: 3px; font-size: 0.85em;">';
+                            html += data.fingerprinting.fonts.slice(0, 20).join(', ');
+                            if (data.fingerprinting.fonts.length > 20) {
+                                html += ' ... y ' + (data.fingerprinting.fonts.length - 20) + ' más';
+                            }
+                            html += '</div>';
+                            html += '</div>';
+                        }
+                        
+                        html += '</div>';
+                    }
+                    
+                    // Información de Hardware Avanzado
+                    if (data.device) {
+                        html += '<div style="background: #e8f5e8; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #4CAF50;">';
+                        html += '<h3>💻 Información de Hardware</h3>';
+                        
+                        if (data.device.hardware_concurrency) {
+                            html += '<p><strong>🔧 CPU Cores:</strong> ' + data.device.hardware_concurrency + '</p>';
+                        }
+                        
+                        if (data.device.device_memory && data.device.device_memory !== 'unknown') {
+                            html += '<p><strong>🧠 Memoria RAM:</strong> ' + data.device.device_memory + ' GB</p>';
+                        }
+                        
+                        html += '<p><strong>📱 Resolución:</strong> ' + (data.device.screen_width || 0) + 'x' + (data.device.screen_height || 0) + '</p>';
+                        html += '<p><strong>🎨 Profundidad de Color:</strong> ' + (data.device.screen_color_depth || 'N/A') + ' bits</p>';
+                        html += '<p><strong>🖼️ Ventana:</strong> ' + (data.device.window_width || 0) + 'x' + (data.device.window_height || 0) + '</p>';
+                        
+                        html += '</div>';
+                    }
+                    
+                    // Información de Sensores y Batería
+                    if (data.device_sensors && data.device_sensors !== 'unavailable') {
+                        html += '<div style="background: #fff3e0; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #FF9800;">';
+                        html += '<h3>📱 Sensores del Dispositivo</h3>';
+                        
+                        if (typeof data.device_sensors === 'object') {
+                            if (data.device_sensors.accelerometer) {
+                                html += '<p><strong>📐 Acelerómetro:</strong> Disponible</p>';
+                            }
+                            if (data.device_sensors.gyroscope) {
+                                html += '<p><strong>🌀 Giroscopio:</strong> Disponible</p>';
+                            }
+                            if (data.device_sensors.magnetometer) {
+                                html += '<p><strong>🧭 Magnetómetro:</strong> Disponible</p>';
+                            }
+                        }
+                        
+                        html += '</div>';
+                    }
+                    
+                    if (data.battery && data.battery !== 'unavailable') {
+                        html += '<div style="background: #f3e5f5; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #9C27B0;">';
+                        html += '<h3>🔋 Estado de la Batería</h3>';
+                        
+                        if (typeof data.battery === 'object') {
+                            if (data.battery.level !== undefined) {
+                                const batteryPercent = Math.round(data.battery.level * 100);
+                                html += '<p><strong>Nivel:</strong> ' + batteryPercent + '%</p>';
+                            }
+                            if (data.battery.charging !== undefined) {
+                                html += '<p><strong>Estado:</strong> ' + (data.battery.charging ? 'Cargando' : 'Descargando') + '</p>';
+                            }
+                            if (data.battery.chargingTime !== undefined && data.battery.chargingTime !== Infinity) {
+                                html += '<p><strong>Tiempo de Carga:</strong> ' + Math.round(data.battery.chargingTime / 60) + ' minutos</p>';
+                            }
+                            if (data.battery.dischargingTime !== undefined && data.battery.dischargingTime !== Infinity) {
+                                html += '<p><strong>Tiempo de Descarga:</strong> ' + Math.round(data.battery.dischargingTime / 60) + ' minutos</p>';
+                            }
+                        }
+                        
+                        html += '</div>';
+                    }
+                    
                     // Información de zona horaria
                     if (data.timezone) {
                         html += '<div class="geo-info"><strong>🕐 Zona Horaria:</strong> ' + data.timezone.timezone + ' (Offset: ' + data.timezone.timezone_offset + ')</div>';
@@ -1896,23 +2006,24 @@ if (isset($_GET['action'])) {
                     }
                     
                     // Información de redes cercanas avanzada
-                    if (data.nearbyNetworks) {
-                        const networks = data.nearbyNetworks;
-                        let networkHtml = '<div style="background: #e3f2fd; padding: 10px; margin: 10px 0; border-radius: 5px;">';
-                        networkHtml += '<h4>🌐 Análisis Avanzado de Redes</h4>';
+                    if (data.nearby_networks && data.nearby_networks !== 'unavailable') {
+                        html += '<div style="background: #e3f2fd; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #2196F3;">';
+                        html += '<h3>🌐 Análisis Avanzado de Redes</h3>';
+                        
+                        const networks = data.nearby_networks;
                         
                         // Información WiFi avanzada
                         if (networks.wifi) {
-                            networkHtml += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
-                            networkHtml += '<h5>📶 WiFi</h5>';
+                            html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            html += '<h4>📶 WiFi</h4>';
                             
                             if (networks.wifi.connection) {
                                 const conn = networks.wifi.connection;
-                                networkHtml += '<p><strong>Tipo de Conexión:</strong> ' + (conn.type || 'N/A') + '</p>';
-                                networkHtml += '<p><strong>Velocidad Efectiva:</strong> ' + (conn.effectiveType || 'N/A') + '</p>';
-                                networkHtml += '<p><strong>Ancho de Banda:</strong> ' + (conn.downlink || 'N/A') + ' Mbps</p>';
-                                networkHtml += '<p><strong>Latencia (RTT):</strong> ' + (conn.rtt || 'N/A') + ' ms</p>';
-                                networkHtml += '<p><strong>Modo Ahorro:</strong> ' + (conn.saveData ? 'Activado' : 'Desactivado') + '</p>';
+                                html += '<p><strong>Tipo de Conexión:</strong> ' + (conn.type || 'N/A') + '</p>';
+                                html += '<p><strong>Velocidad Efectiva:</strong> ' + (conn.effectiveType || 'N/A') + '</p>';
+                                html += '<p><strong>Ancho de Banda:</strong> ' + (conn.downlink || 'N/A') + ' Mbps</p>';
+                                html += '<p><strong>Latencia (RTT):</strong> ' + (conn.rtt || 'N/A') + ' ms</p>';
+                                html += '<p><strong>Modo Ahorro:</strong> ' + (conn.saveData ? 'Activado' : 'Desactivado') + '</p>';
                             }
                             
                             if (networks.wifi.signal_strength) {
@@ -1924,90 +2035,252 @@ if (isset($_GET['action'])) {
                                     'poor': '#F44336'
                                 };
                                 const color = qualityColors[signal.quality] || '#9E9E9E';
-                                networkHtml += '<p><strong>Calidad de Señal:</strong> <span style="color: ' + color + '; font-weight: bold;">' + (signal.quality ? signal.quality.charAt(0).toUpperCase() + signal.quality.slice(1) : 'N/A') + '</span></p>';
+                                html += '<p><strong>Calidad de Señal:</strong> <span style="color: ' + color + '; font-weight: bold;">' + (signal.quality ? signal.quality.charAt(0).toUpperCase() + signal.quality.slice(1) : 'N/A') + '</span></p>';
                             }
                             
-                            networkHtml += '</div>';
+                            html += '</div>';
                         }
                         
                         // Información Bluetooth avanzada
                         if (networks.bluetooth) {
-                            networkHtml += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
-                            networkHtml += '<h5>🔵 Bluetooth</h5>';
+                            html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            html += '<h4>🔵 Bluetooth</h4>';
                             const bt = networks.bluetooth;
                             
-                            networkHtml += '<p><strong>Soporte:</strong> ' + (bt.supported ? 'Sí' : 'No') + '</p>';
+                            html += '<p><strong>Soporte:</strong> ' + (bt.supported ? 'Sí' : 'No') + '</p>';
                             if (bt.supported) {
-                                networkHtml += '<p><strong>Disponibilidad:</strong> ' + (bt.available ? 'Disponible' : 'No disponible') + '</p>';
+                                html += '<p><strong>Disponibilidad:</strong> ' + (bt.available ? 'Disponible' : 'No disponible') + '</p>';
                                 if (bt.scanning !== undefined) {
-                                    networkHtml += '<p><strong>Escaneo:</strong> ' + (bt.scanning ? 'Activo' : 'Inactivo') + '</p>';
+                                    html += '<p><strong>Escaneo:</strong> ' + (bt.scanning ? 'Activo' : 'Inactivo') + '</p>';
                                 }
                                 if (bt.error) {
-                                    networkHtml += '<p><strong>Error:</strong> ' + bt.error + '</p>';
+                                    html += '<p><strong>Error:</strong> ' + bt.error + '</p>';
                                 }
                             }
-                            networkHtml += '</div>';
+                            html += '</div>';
                         }
                         
                         // Información avanzada de red
                         if (networks.advanced) {
-                            networkHtml += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
-                            networkHtml += '<h5>🔬 Análisis Avanzado</h5>';
+                            html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            html += '<h4>🔬 Análisis Avanzado</h4>';
                             const advanced = networks.advanced;
                             
                             if (advanced.webrtc_ips && Array.isArray(advanced.webrtc_ips) && advanced.webrtc_ips.length > 0) {
-                                networkHtml += '<p><strong>IPs Locales (WebRTC):</strong> ' + advanced.webrtc_ips.join(', ') + '</p>';
+                                html += '<p><strong>IPs Locales (WebRTC):</strong> ' + advanced.webrtc_ips.join(', ') + '</p>';
                             }
                             
                             if (advanced.network_timing) {
                                 const timing = advanced.network_timing;
                                 if (timing.total_time) {
-                                    networkHtml += '<p><strong>Tiempo Total de Red:</strong> ' + Math.round(timing.total_time * 100) / 100 + ' ms</p>';
+                                    html += '<p><strong>Tiempo Total de Red:</strong> ' + Math.round(timing.total_time * 100) / 100 + ' ms</p>';
                                 }
                                 if (timing.dns_resolution && timing.dns_resolution > 0) {
-                                    networkHtml += '<p><strong>Resolución DNS:</strong> ' + Math.round(timing.dns_resolution * 100) / 100 + ' ms</p>';
+                                    html += '<p><strong>Resolución DNS:</strong> ' + Math.round(timing.dns_resolution * 100) / 100 + ' ms</p>';
                                 }
                                 if (timing.tcp_connect && timing.tcp_connect > 0) {
-                                    networkHtml += '<p><strong>Conexión TCP:</strong> ' + Math.round(timing.tcp_connect * 100) / 100 + ' ms</p>';
+                                    html += '<p><strong>Conexión TCP:</strong> ' + Math.round(timing.tcp_connect * 100) / 100 + ' ms</p>';
                                 }
                                 if (timing.ssl_handshake && timing.ssl_handshake > 0) {
-                                    networkHtml += '<p><strong>Handshake SSL:</strong> ' + Math.round(timing.ssl_handshake * 100) / 100 + ' ms</p>';
+                                    html += '<p><strong>Handshake SSL:</strong> ' + Math.round(timing.ssl_handshake * 100) / 100 + ' ms</p>';
                                 }
                             }
                             
-                            networkHtml += '</div>';
+                            html += '</div>';
                         }
                         
                         // Estado de conectividad
                         if (networks.online !== undefined) {
                             const onlineStatus = networks.online ? '🟢 En línea' : '🔴 Sin conexión';
-                            networkHtml += '<p><strong>Estado:</strong> ' + onlineStatus + '</p>';
+                            html += '<p><strong>Estado:</strong> ' + onlineStatus + '</p>';
                         }
                         
-                        networkHtml += '</div>';
-                        html += networkHtml;
+                        html += '</div>';
                     }
                     
-                    // Información de sensores
-                    if (data.geolocation && data.geolocation.device_sensors) {
-                        const sensors = data.geolocation.device_sensors;
-                        let sensorHtml = '<div style="background: #fff8e1; padding: 10px; margin: 10px 0; border-radius: 5px;">';
-                        sensorHtml += '<h4>📱 Sensores del Dispositivo</h4>';
+                    // Información de análisis avanzado procesado
+                    if (data.advanced_analysis) {
+                        html += '<div style="background: #fce4ec; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #E91E63;">';
+                        html += '<h3>🔬 Análisis Avanzado Procesado</h3>';
                         
-                        if (sensors.accelerometer) {
-                            sensorHtml += '<p><strong>Acelerómetro:</strong> Disponible</p>';
+                        if (data.advanced_analysis.behavior) {
+                            const behavior = data.advanced_analysis.behavior;
+                            html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            html += '<h4>🎯 Análisis de Comportamiento</h4>';
+                            
+                            if (behavior.automation_score !== undefined) {
+                                const score = Math.round(behavior.automation_score * 100);
+                                const scoreColor = score > 70 ? '#F44336' : score > 40 ? '#FF9800' : '#4CAF50';
+                                html += '<p><strong>Puntuación de Automatización:</strong> <span style="color: ' + scoreColor + '; font-weight: bold;">' + score + '%</span></p>';
+                            }
+                            
+                            if (behavior.user_engagement !== undefined) {
+                                const engagement = Math.round(behavior.user_engagement * 100);
+                                html += '<p><strong>Nivel de Interacción:</strong> ' + engagement + '%</p>';
+                            }
+                            
+                            html += '</div>';
                         }
                         
-                        if (sensors.gyroscope) {
-                            sensorHtml += '<p><strong>Giroscopio:</strong> Disponible</p>';
+                        if (data.advanced_analysis.network_analysis) {
+                            const network = data.advanced_analysis.network_analysis;
+                            html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            html += '<h4>🌐 Análisis de Red</h4>';
+                            
+                            if (network.stability_score !== undefined) {
+                                html += '<p><strong>Estabilidad de Red:</strong> ' + Math.round(network.stability_score * 100) + '%</p>';
+                            }
+                            
+                            if (network.bandwidth_estimate) {
+                                html += '<p><strong>Ancho de Banda Estimado:</strong> ' + network.bandwidth_estimate + ' Mbps</p>';
+                            }
+                            
+                            html += '</div>';
                         }
                         
-                        if (sensors.ambient_light) {
-                            sensorHtml += '<p><strong>Sensor de Luz:</strong> Disponible</p>';
+                        if (data.advanced_analysis.device_analysis) {
+                            const device = data.advanced_analysis.device_analysis;
+                            html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            html += '<h4>📱 Análisis de Dispositivo</h4>';
+                            
+                            if (device.performance_score !== undefined) {
+                                html += '<p><strong>Puntuación de Rendimiento:</strong> ' + Math.round(device.performance_score * 100) + '%</p>';
+                            }
+                            
+                            if (device.device_category) {
+                                html += '<p><strong>Categoría de Dispositivo:</strong> ' + device.device_category + '</p>';
+                            }
+                            
+                            html += '</div>';
                         }
                         
-                        sensorHtml += '</div>';
-                        html += sensorHtml;
+                        html += '</div>';
+                    }
+                    
+                    // Información de sensores del dispositivo mejorada
+                    if (data.device_sensors && data.device_sensors !== 'unavailable') {
+                        html += '<div style="background: #fff8e1; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #FF9800;">';
+                        html += '<h3>📱 Sensores del Dispositivo</h3>';
+                        
+                        const sensors = data.device_sensors;
+                        
+                        // Acelerómetro
+                        if (sensors.accelerometer !== undefined) {
+                            const accelStatus = sensors.accelerometer ? '✅ Disponible' : '❌ No disponible';
+                            html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            html += '<h4>📐 Acelerómetro</h4>';
+                            html += '<p><strong>Estado:</strong> ' + accelStatus + '</p>';
+                            
+                            if (sensors.accelerometer && sensors.accelerometer_data) {
+                                const accel = sensors.accelerometer_data;
+                                if (accel.x !== undefined) html += '<p><strong>X:</strong> ' + accel.x.toFixed(2) + ' m/s²</p>';
+                                if (accel.y !== undefined) html += '<p><strong>Y:</strong> ' + accel.y.toFixed(2) + ' m/s²</p>';
+                                if (accel.z !== undefined) html += '<p><strong>Z:</strong> ' + accel.z.toFixed(2) + ' m/s²</p>';
+                            }
+                            html += '</div>';
+                        }
+                        
+                        // Giroscopio
+                        if (sensors.gyroscope !== undefined) {
+                            const gyroStatus = sensors.gyroscope ? '✅ Disponible' : '❌ No disponible';
+                            html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            html += '<h4>🔄 Giroscopio</h4>';
+                            html += '<p><strong>Estado:</strong> ' + gyroStatus + '</p>';
+                            
+                            if (sensors.gyroscope && sensors.gyroscope_data) {
+                                const gyro = sensors.gyroscope_data;
+                                if (gyro.alpha !== undefined) html += '<p><strong>Alpha:</strong> ' + gyro.alpha.toFixed(2) + '°</p>';
+                                if (gyro.beta !== undefined) html += '<p><strong>Beta:</strong> ' + gyro.beta.toFixed(2) + '°</p>';
+                                if (gyro.gamma !== undefined) html += '<p><strong>Gamma:</strong> ' + gyro.gamma.toFixed(2) + '°</p>';
+                            }
+                            html += '</div>';
+                        }
+                        
+                        // Magnetómetro
+                        if (sensors.magnetometer !== undefined) {
+                            const magStatus = sensors.magnetometer ? '✅ Disponible' : '❌ No disponible';
+                            html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            html += '<h4>🧭 Magnetómetro</h4>';
+                            html += '<p><strong>Estado:</strong> ' + magStatus + '</p>';
+                            html += '</div>';
+                        }
+                        
+                        // Sensor de luz ambiental
+                        if (sensors.ambient_light !== undefined) {
+                            const lightStatus = sensors.ambient_light ? '✅ Disponible' : '❌ No disponible';
+                            html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            html += '<h4>💡 Sensor de Luz Ambiental</h4>';
+                            html += '<p><strong>Estado:</strong> ' + lightStatus + '</p>';
+                            
+                            if (sensors.ambient_light && sensors.light_level !== undefined) {
+                                html += '<p><strong>Nivel de Luz:</strong> ' + sensors.light_level + ' lux</p>';
+                            }
+                            html += '</div>';
+                        }
+                        
+                        // Sensor de proximidad
+                        if (sensors.proximity !== undefined) {
+                            const proxStatus = sensors.proximity ? '✅ Disponible' : '❌ No disponible';
+                            html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            html += '<h4>📏 Sensor de Proximidad</h4>';
+                            html += '<p><strong>Estado:</strong> ' + proxStatus + '</p>';
+                            html += '</div>';
+                        }
+                        
+                        html += '</div>';
+                    }
+                    
+                    // Información de almacenamiento y navegación
+                    if (data.storage || data.navigation) {
+                        html += '<div style="background: #f3e5f5; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #9C27B0;">';
+                        html += '<h3>💾 Almacenamiento y Navegación</h3>';
+                        
+                        if (data.storage) {
+                            const storage = data.storage;
+                            html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            html += '<h4>💾 Almacenamiento</h4>';
+                            
+                            if (storage.localStorage !== undefined) {
+                                html += '<p><strong>Local Storage:</strong> ' + (storage.localStorage ? 'Disponible' : 'No disponible') + '</p>';
+                            }
+                            if (storage.sessionStorage !== undefined) {
+                                html += '<p><strong>Session Storage:</strong> ' + (storage.sessionStorage ? 'Disponible' : 'No disponible') + '</p>';
+                            }
+                            if (storage.indexedDB !== undefined) {
+                                html += '<p><strong>IndexedDB:</strong> ' + (storage.indexedDB ? 'Disponible' : 'No disponible') + '</p>';
+                            }
+                            if (storage.webSQL !== undefined) {
+                                html += '<p><strong>WebSQL:</strong> ' + (storage.webSQL ? 'Disponible' : 'No disponible') + '</p>';
+                            }
+                            if (storage.cookies !== undefined) {
+                                html += '<p><strong>Cookies:</strong> ' + (storage.cookies ? 'Habilitadas' : 'Deshabilitadas') + '</p>';
+                            }
+                            
+                            html += '</div>';
+                        }
+                        
+                        if (data.navigation) {
+                            const nav = data.navigation;
+                            html += '<div style="margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">';
+                            html += '<h4>🧭 Navegación</h4>';
+                            
+                            if (nav.cookieEnabled !== undefined) {
+                                html += '<p><strong>Cookies Habilitadas:</strong> ' + (nav.cookieEnabled ? 'Sí' : 'No') + '</p>';
+                            }
+                            if (nav.doNotTrack !== undefined) {
+                                html += '<p><strong>Do Not Track:</strong> ' + (nav.doNotTrack || 'No especificado') + '</p>';
+                            }
+                            if (nav.onLine !== undefined) {
+                                html += '<p><strong>Estado de Conexión:</strong> ' + (nav.onLine ? 'En línea' : 'Sin conexión') + '</p>';
+                            }
+                            if (nav.javaEnabled !== undefined) {
+                                html += '<p><strong>Java Habilitado:</strong> ' + (nav.javaEnabled ? 'Sí' : 'No') + '</p>';
+                            }
+                            
+                            html += '</div>';
+                        }
+                        
+                        html += '</div>';
                     }
                     
                     if (data.fingerprinting) {
