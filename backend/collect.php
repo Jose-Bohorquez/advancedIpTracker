@@ -7,10 +7,11 @@
  * No debe usarse para actividades maliciosas
  */
 
-header('Content-Type: application/json');
+// Configurar headers para JSON y CORS
+header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 
 // Manejar preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {

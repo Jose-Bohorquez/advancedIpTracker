@@ -3,6 +3,15 @@
  * Maneja la inicialización y envío de datos de fingerprinting avanzado
  */
 
+// Variable global para almacenar datos recolectados
+let collectedData = {
+    sessionId: null,
+    timestamp: Date.now(),
+    geolocation: null,
+    formInteractions: [],
+    basicFingerprint: null
+};
+
 class FingerprintManager {
     constructor() {
         this.data = {};
